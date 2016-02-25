@@ -17,7 +17,7 @@ Tested Platform:
 https://developer.salesforce.com/docs/atlas.en-us.api_streaming.meta/api_streaming/create_object.htm#create_object
 
 2. Navigate to "<INBOUND_HOME>" and run the following command.
-         $ mvn clean install
+        $ mvn clean install
 
 3. To use the Salesforce inbound endpoint, you need to download the inbound org.apache.synapse.salesforce.poll.class-1.0.0.jar from https://storepreview.wso2.com/store/ and copy the jar to the <ESB_HOME>/repository/components/dropins directory.
 
