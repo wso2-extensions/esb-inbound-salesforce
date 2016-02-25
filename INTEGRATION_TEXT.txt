@@ -3,7 +3,7 @@ Pre-requisites:
  - Maven 3.x
  - Java 1.6 or above
  - The org.wso2.esb.integration.integration-base project is required. The test suite has been configured to download this project automatically. If the automatic download fails, download the following project and compile it using the mvn clean install command to update your local repository:
-   https://github.com/wso2/esb-connectors/tree/master/integration-base
+   https://github.com/wso2-extensions/esb-connector-integrationbase
 
 Tested Platform: 
 
@@ -17,7 +17,7 @@ Tested Platform:
 https://developer.salesforce.com/docs/atlas.en-us.api_streaming.meta/api_streaming/create_object.htm#create_object
 
 2. Navigate to "<INBOUND_HOME>" and run the following command.
-         $ mvn clean install
+        $ mvn clean install
 
 3. To use the Salesforce inbound endpoint, you need to download the inbound org.apache.synapse.salesforce.poll.class-1.0.0.jar from https://storepreview.wso2.com/store/ and copy the jar to the <ESB_HOME>/repository/components/dropins directory.
 

@@ -1,8 +1,9 @@
-# esb-inbound-salesforce
+# Salesforce ESB Inbound
+
 The Salesforce inbound endpoint allows you to perform various Salesforce streaming data via WSO2 ESB.
 
-
 ##Build
+
 mvn clean install
 
 ###How You Can Contribute
