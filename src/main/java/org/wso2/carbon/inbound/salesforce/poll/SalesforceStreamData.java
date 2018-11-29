@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -17,211 +17,191 @@
  */
 package org.wso2.carbon.inbound.salesforce.poll;
 
+import static org.cometd.bayeux.Channel.META_CONNECT;
+import static org.cometd.bayeux.Channel.META_DISCONNECT;
+import static org.cometd.bayeux.Channel.META_HANDSHAKE;
+import static org.cometd.bayeux.Channel.META_SUBSCRIBE;
+import static org.cometd.bayeux.Channel.META_UNSUBSCRIBE;
+import static org.wso2.carbon.inbound.salesforce.poll.SalesforceDataHolderObject.setProperties;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
+import java.util.InputMismatchException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.eclipse.jetty.util.ajax.JSON;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericPollingConsumer;
+import org.wso2.carbon.registry.core.exceptions.RegistryException;
+import org.wso2.carbon.registry.core.Registry;
+import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 
-import org.cometd.bayeux.Channel;
-import org.cometd.bayeux.Message;
-import org.cometd.bayeux.client.ClientSessionChannel;
-import org.cometd.bayeux.client.ClientSessionChannel.MessageListener;
-import org.cometd.client.BayeuxClient;
-import org.cometd.client.transport.ClientTransport;
-import org.cometd.client.transport.LongPollingTransport;
-import org.eclipse.jetty.client.ContentExchange;
-import org.eclipse.jetty.client.HttpClient;
-
-import java.io.IOException;
-import java.lang.Exception;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * Salesforce streaming api Inbound.
  */
 public class SalesforceStreamData extends GenericPollingConsumer {
 
-    private static final Log log = LogFactory.getLog(SalesforceStreamData.class);
-
+    private static final Log LOG = LogFactory.getLog(SalesforceStreamData.class);
     // Mandatory parameters.
-    private static final boolean version = false;
-    private static final boolean useCookies = version;
-    protected static String loginEndpoint;
-
+    private String loginEndpoint;
     private String userName;
     private String password;
     private String salesforceObject;
-    private String channel;
-    private String packageVersion;
-    private String packageName;
     private String streamingEndpointUri;
     private String injectingSeq;
-
+    private long replayFromOption;
     // optional parameters.
     private int connectionTimeout;
     private int readTimeout;
     private int waitTime;
-
-    private BayeuxClient client = null;
-    private HttpClient httpClient;
-
     private boolean isPolled = false;
+    private String tenantDomain;
+    private final RegistryService registryService = IdentityTenantUtil.getRegistryService();
+    private static EmpConnector connector;
 
-    public SalesforceStreamData(Properties salesforceProperties, String name,
-                                SynapseEnvironment synapseEnvironment, long scanInterval,
-                                String injectingSeq, String onErrorSeq, boolean coordination,
-                                boolean sequential) {
-        super(salesforceProperties, name, synapseEnvironment, scanInterval,
-                injectingSeq, onErrorSeq, coordination, sequential);
+
+    public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
+            long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination, boolean sequential) {
+
+        super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
+                sequential);
+        setProperties(salesforceProperties);
+        tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         loadMandatoryParameters(salesforceProperties);
         loadOptionalParameters(salesforceProperties);
-        streamingEndpointUri = version ? "/" + packageName : "/" + packageName + "/" + packageVersion;
-        channel = version ? "/" + salesforceObject : "/topic/" + salesforceObject;
+        streamingEndpointUri = loginEndpoint;
         this.injectingSeq = injectingSeq;
-        httpClient = new HttpClient();
     }
 
-    private void makeConnect() throws IOException {
+    private static long readFromGivenFile(String filePath) {
+
+        String str;
+        BufferedReader bufferedReader;
         try {
-            client = makeClient();
-        } catch (Exception e) {
-            handleException("Error during make the client: " + e.getMessage(), e);
+            bufferedReader = new BufferedReader(new FileReader(filePath));
+            str = bufferedReader.readLine();
+            bufferedReader.close();
+            if (str != null && !str.isEmpty()) {
+                return Long.parseLong(str);
+            } else
+                return SalesforceConstant.REPLAY_FROM_TIP;
+        } catch (IOException e) {
+            LOG.error("Unable to read file from given path", e);
         }
 
-        if (client != null) {
-            client.getChannel(Channel.META_HANDSHAKE).addListener(new ClientSessionChannel.MessageListener() {
-                public void onMessage(ClientSessionChannel channel, Message message) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("META_HANDSHAKE with the Channel for Salesforce Streaming Endpoint" + message);
-                    }
-                    boolean success = message.isSuccessful();
-                    if (!success) {
-                        String error = (String) message.get("error");
-                        if (StringUtils.isNotEmpty(error)) {
-                            handleException("Error during HANDSHAKE: " + error);
-                        }
-                        Exception exception = (Exception) message.get("exception");
-                        if (exception != null) {
-                            handleException("Exception during HANDSHAKE: ", exception);
-                        }
-                    }
-                }
-            });
+        return SalesforceConstant.REPLAY_FROM_TIP;
+    }
 
-            client.getChannel(Channel.META_CONNECT).addListener(new ClientSessionChannel.MessageListener() {
-                public void onMessage(ClientSessionChannel channel, Message message) {
-                    log.info("META_CONNECT with the Channel for Salesforce Streaming Endpoint" + message);
-                    boolean success = message.isSuccessful();
-                    boolean clientConnection = client.isConnected();
-                    if (!success && !clientConnection) {
-                        channel.unsubscribe();
-                        client.disconnect();
-                        log.info("Waiting to Connect with Salesforce Streaming API......");
-                        try {
-                            makeConnect();
-                        } catch (IOException e) {
-                            handleException("Error during make the client: " + e.getMessage(), e);
-                        }
-                        String error = (String) message.get("error");
-                        if (StringUtils.isNotEmpty(error)) {
-                            handleException("Error during CONNECT: " + error);
-                        }
-                    }
-                }
-            });
+    private void updateRegistryEventID(long id) {
 
-            client.getChannel(Channel.META_SUBSCRIBE).addListener(new ClientSessionChannel.MessageListener() {
-                public void onMessage(ClientSessionChannel channel, Message message) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("META_SUBSCRIBE with the Channel for Salesforce Streaming Endpoint" + message);
-                    }
-                    boolean success = message.isSuccessful();
-                    if (!success) {
-                        String error = (String) message.get("error");
-                        if (StringUtils.isNotEmpty(error)) {
-                            handleException("Error during SUBSCRIBE: " + error);
-                        }
-                    }
-                }
-            });
-
-            client.handshake();
-            boolean handshaken = client.waitFor(waitTime, BayeuxClient.State.CONNECTED);
-            if (!handshaken) {
-                boolean success = client.isHandshook();
-                if (!success) {
-                    client.handshake();
-                }
+        startTenantFlow(tenantDomain);
+        try {
+            Registry registry = getRegistryForTenant(tenantDomain);
+            if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)) {
+                registry.beginTransaction();
+                Resource resource = registry.get(SalesforceConstant.RESOURCE_PATH);
+                resource.setProperty(SalesforceConstant.PROPERTY_NAME, "" + id);
+                registry.put(SalesforceConstant.RESOURCE_PATH, resource);
+                registry.commitTransaction();
             }
 
-            client.getChannel(channel).subscribe(new MessageListener() {
-                public void onMessage(ClientSessionChannel channel, Message message) {
-                    injectSalesforceMessage(message);
-                }
-            });
+        } catch (RegistryException e) {
+            LOG.error("Unable to read resource eventID from " + SalesforceConstant.RESOURCE_PATH);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
+
     }
 
-    /**
-     * Create a http client.
-     *
-     * @return
-     * @throws Exception
-     */
-    private BayeuxClient makeClient() throws MalformedURLException {
-        httpClient.setConnectTimeout(connectionTimeout);
-        httpClient.setTimeout(readTimeout);
+    private long getRegistryEventID() {
+
+        startTenantFlow(tenantDomain);
+        long eventIDFromDB;
         try {
-            httpClient.start();
-            SoapLoginUtil.login(httpClient, userName, password);
-            final String sessionId = SoapLoginUtil.getSessionId();
-            String endpoint = SoapLoginUtil.getEndpoint();
-            log.info("Login to Salesforce Streaming Endpoint: " + endpoint);
-            Map<String, Object> options = new HashMap<String, Object>();
-            options.put(ClientTransport.TIMEOUT_OPTION, readTimeout);
-            LongPollingTransport transport = new LongPollingTransport(options, httpClient) {
+            Registry registry = getRegistryForTenant(tenantDomain);
 
-                @Override
-                protected void customize(ContentExchange exchange) {
-                    super.customize(exchange);
-                    exchange.addRequestHeader("Authorization", "OAuth " + sessionId);
-                }
-            };
+            if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)
+                    && registry.get(SalesforceConstant.RESOURCE_PATH) != null
+                    && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME)
+                    != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
+                    .getProperty(SalesforceConstant.PROPERTY_NAME).isEmpty()) {
+                eventIDFromDB = Long.parseLong(
+                        registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
+            } else {
 
-            BayeuxClient client = new BayeuxClient(salesforceStreamingEndpoint(endpoint), transport);
+                eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
+            }
+            return eventIDFromDB;
 
-            if (useCookies) establishCookies(client, userName, sessionId);
-            return client;
-        } catch (MalformedURLException e) {
-            handleException("Error while building URL: " + e.getMessage(), e);
-        } catch (Exception e) {
-            handleException("Error while starting the Http Client" + e.getMessage(), e);
+        } catch (RegistryException e) {
+            LOG.error("Unable to get the property eventID from the resource " + SalesforceConstant.RESOURCE_PATH, e);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
-        return null;
+        return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
-    private String salesforceStreamingEndpoint(String endpoint) throws MalformedURLException {
-        return new URL(endpoint + streamingEndpointUri).toExternalForm();
+    private void startTenantFlow(String tenantDomain) {
+
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
     }
 
-    /**
-     * establish the Cookies fot the http client.
-     *
-     * @param client The Bayeux Client that connect with Salesforce Streaming Server.
-     * @param user   The User Name of Salesforce.
-     * @param sid    The session Id of Salesforce.
-     */
-    private void establishCookies(BayeuxClient client, String user, String sid) {
-        client.setCookie(SalesforceConstant.COOKIE_LOCALEINFO_KEY, SalesforceConstant.COOKIE_LOCALEINFO_DEFAULT_VALUE, waitTime);
-        client.setCookie(SalesforceConstant.COOKIE_LOGIN_KEY, user, waitTime);
-        client.setCookie(SalesforceConstant.COOKIE_SESSION_ID_KEY, sid, waitTime);
-        client.setCookie(SalesforceConstant.COOKIE_LANGUAGE_KEY, SalesforceConstant.COOKIE_LANGUAGE_DEFAULT_VALUE, waitTime);
+    private Registry getRegistryForTenant(String tenantDomain) throws RegistryException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        return registryService.getConfigSystemRegistry(tenantId);
+    }
+
+    private void makeConnect() throws Throwable {
+
+        Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
+                ((HashMap<String, Long>) event.
+                        get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
+        BearerTokenProvider tokenProvider = new BearerTokenProvider(() -> {
+            try {
+                return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        BayeuxParameters params = tokenProvider.login();
+        connector = new EmpConnector(params);
+        LoggingListener loggingListener = new LoggingListener(true, true);
+        connector.addListener(META_HANDSHAKE, loggingListener).addListener(META_CONNECT, loggingListener)
+                .addListener(META_DISCONNECT, loggingListener).addListener(META_SUBSCRIBE, loggingListener)
+                .addListener(META_UNSUBSCRIBE, loggingListener);
+        connector.setBearerTokenProvider(tokenProvider);
+        connector.start().get(waitTime, TimeUnit.MILLISECONDS);
+        TopicSubscription subscription;
+        try {
+            subscription = connector.subscribe(salesforceObject, replayFromOption, consumer)
+                    .get(waitTime, TimeUnit.MILLISECONDS);
+            LOG.info("Subscribed: " + subscription);
+        } catch (ExecutionException e) {
+            LOG.error("Unable to subscribed for the event/topic", e);
+        } catch (TimeoutException e) {
+            LOG.error("Timed out subscribing", e);
+        } catch (InterruptedException e) {
+            LOG.error("Unexpected error occured while subscribing to event/topic");
+        }
     }
 
     /**
@@ -230,22 +210,22 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param properties The mandatory parameters of Salesforce.
      */
     private void loadMandatoryParameters(Properties properties) {
-        if (log.isDebugEnabled()) {
-            log.debug("Starting to load the salesforce credentials");
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting to load the salesforce credentials");
         }
 
         userName = properties.getProperty(SalesforceConstant.USER_NAME);
         salesforceObject = properties.getProperty(SalesforceConstant.SOBJECT);
         password = properties.getProperty(SalesforceConstant.PASSWORD);
         loginEndpoint = properties.getProperty(SalesforceConstant.LOGIN_ENDPOINT);
-        packageName = properties.getProperty(SalesforceConstant.PACKAGE_NAME);
-        packageVersion = properties.getProperty(SalesforceConstant.PACKAGE_VERSION);
+        String packageVersion = properties.getProperty(SalesforceConstant.PACKAGE_VERSION);
 
-        if (StringUtils.isEmpty(userName) && StringUtils.isEmpty(salesforceObject) &&
-                StringUtils.isEmpty(password) && StringUtils.isEmpty(loginEndpoint) &&
-                StringUtils.isEmpty(packageName) && StringUtils.isEmpty(packageVersion)) {
+        if (StringUtils.isEmpty(userName) && StringUtils.isEmpty(salesforceObject) && StringUtils.isEmpty(password)
+                && StringUtils.isEmpty(loginEndpoint) && StringUtils.isEmpty(packageVersion)) {
             handleException("Mandatory Parameters can't be Empty...");
         }
+        SalesforceDataHolderObject.setPackageVersion(packageVersion);
     }
 
     /**
@@ -254,8 +234,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param properties The Optional parameters of Salesforce.
      */
     private void loadOptionalParameters(Properties properties) {
-        if (log.isDebugEnabled()) {
-            log.debug("Starting to load the salesforce credentials");
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Starting to load the salesforce credentials");
         }
         if (properties.getProperty(SalesforceConstant.CONNECTION_TIMEOUT) == null) {
             connectionTimeout = SalesforceConstant.CONNECTION_TIMEOUT_DEFAULT;
@@ -263,27 +244,60 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             try {
                 connectionTimeout = Integer.parseInt(properties.getProperty(SalesforceConstant.CONNECTION_TIMEOUT));
             } catch (NumberFormatException e) {
-                log.error("The Value should be in Number", e);
+                LOG.error("The Value should be in Number", e);
             }
         }
-
+        SalesforceDataHolderObject.setConnectionTimeout(connectionTimeout);
         if (properties.getProperty(SalesforceConstant.READ_TIMEOUT) == null) {
             readTimeout = SalesforceConstant.READ_TIMEOUT_DEFAULT;
         } else {
             try {
                 readTimeout = Integer.parseInt(properties.getProperty(SalesforceConstant.READ_TIMEOUT));
             } catch (NumberFormatException e) {
-                log.error("The Value should be in Number", e);
+                LOG.error("The Value should be in Number", e);
             }
         }
-
+        SalesforceDataHolderObject.setReadTimeout(readTimeout);
         if (properties.getProperty(SalesforceConstant.WAIT_TIME) == null) {
-            connectionTimeout = SalesforceConstant.WAIT_TIME_DEFAULT;
+            waitTime = SalesforceConstant.WAIT_TIME_DEFAULT;
         } else {
             try {
                 waitTime = Integer.parseInt(properties.getProperty(SalesforceConstant.WAIT_TIME));
             } catch (NumberFormatException e) {
-                log.error("The Value should be in Number", e);
+                LOG.error("The Value should be in Number", e);
+            }
+        }
+        SalesforceDataHolderObject.setWaitTime(waitTime);
+        //replay enable
+        if (Boolean.parseBoolean(properties.getProperty(SalesforceConstant.REPLAY_FROM))) {
+
+            if (properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path) != null && !StringUtils.
+                    isEmpty(properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path))) {
+                try {
+                    //read id from file
+                    replayFromOption = readFromGivenFile(
+                            properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path));
+                } catch (NumberFormatException e) {
+                    LOG.error("The Value should be number", e);
+                }
+            } else {
+                //read id from  registry db
+                replayFromOption = getRegistryEventID();
+            }
+
+        } else {
+            replayFromOption = SalesforceConstant.REPLAY_FROM_TIP;
+        }
+        SalesforceDataHolderObject.setReplayFromOption(replayFromOption);
+
+        if (properties.getProperty(SalesforceConstant.SOAP_API_VERSION) == null) {
+            SalesforceDataHolderObject.setSoapApiVersion(SalesforceConstant.DEFAULT_SOAP_API_VERSION);
+        } else {
+            try {
+                SalesforceDataHolderObject
+                        .setSoapApiVersion(properties.getProperty(SalesforceConstant.SOAP_API_VERSION));
+            } catch (InputMismatchException e) {
+                LOG.error("The Value should be in Number", e);
             }
         }
     }
@@ -292,11 +306,16 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         //Establishing connection with Salesforce streaming api.
         try {
             if (!isPolled) {
+                if (connector != null && connector.isConnected()) {
+                    connector.stop();
+                }
+
+
                 makeConnect();
                 isPolled = true;
             }
-        } catch (Exception se) {
-            handleException("Error while setup the Salesforce connection.", se);
+        } catch (Throwable e) {
+            LOG.error("Error while setup the Salesforce connection.", e);
         }
         return null;
     }
@@ -306,37 +325,25 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      *
      * @param message the salesforce response status
      */
-    private void injectSalesforceMessage(Message message) {
+    private void injectSalesforceMessage(String message, long id) {
+
         if (injectingSeq != null) {
-            injectMessage(message.getJSON(), SalesforceConstant.CONTENT_TYPE);
-            if (log.isDebugEnabled()) {
-                log.debug("injecting salesforce message to the sequence : " + injectingSeq);
+            if (LOG.isDebugEnabled()) {
+                LOG.info("id for the event recieved: " + id);
+            }
+
+            updateRegistryEventID(id);
+            injectMessage(message, SalesforceConstant.CONTENT_TYPE);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("injecting salesforce message to the sequence : " + injectingSeq);
             }
         } else {
             handleException("the Sequence is not found");
         }
     }
 
-    private void handleException(String msg, Exception ex) {
-        log.error(msg, ex);
-        throw new SynapseException(ex);
-    }
-
     private void handleException(String msg) {
-        log.error(msg);
+        LOG.error(msg);
         throw new SynapseException(msg);
-    }
-
-    public void destroy() {
-        try {
-            if (client != null) {
-                client.disconnect();
-                if (log.isDebugEnabled()) {
-                    log.debug("The Salesforce stream has been shutdown !");
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error while shutdown the Salesforce stream" + e.getMessage(), e);
-        }
     }
 }

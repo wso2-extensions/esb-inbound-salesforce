@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -23,9 +23,14 @@ public class SalesforceConstant {
     public static final String USER_NAME = "connection.salesforce.userName";
     public static final String PASSWORD = "connection.salesforce.password";
     public static final String LOGIN_ENDPOINT = "connection.salesforce.loginEndpoint";
-    public static final String PACKAGE_NAME = "connection.salesforce.packageName";
     public static final String PACKAGE_VERSION = "connection.salesforce.packageVersion";
     public static final String SOAP_API_VERSION = "connection.salesforce.soapApiVersion";
+    public static final String REPLAY_FROM = "connection.salesforce.replay";
+    public static final String REPLAY_FROM_ID_Stored_File_Path = "connection.salesforce.EventIDStoredFilePath";
+    public static final long REPLAY_FROM_EARLIEST = -2L;
+    public static final long REPLAY_FROM_TIP = -1L;
+    public static final String RESOURCE_PATH = "connector/salesforce/event";
+    public static final String PROPERTY_NAME = "eventID";
 
     //object for the salesforce inbound endpoint
     public static final String SOBJECT = "connection.salesforce.salesforceObject";
@@ -43,20 +48,8 @@ public class SalesforceConstant {
     //content type of the message
     public static final String CONTENT_TYPE = "application/json";
 
-    public static final String COOKIE_LANGUAGE_KEY = "language";
-    public static final String COOKIE_LANGUAGE_DEFAULT_VALUE = "en_US";
-    public static final String COOKIE_SESSION_ID_KEY = "sid";
-    public static final String COOKIE_LOGIN_KEY = "login";
-    public static final String COOKIE_LOCALEINFO_KEY = "com.salesforce.LocaleInfo";
-    public static final String COOKIE_LOCALEINFO_DEFAULT_VALUE = "us";
+    public static final String REPLAY_ID = "replayId";
+    public static final String EVENT = "event";
+    public static final String DEFAULT_SOAP_API_VERSION = "22.0";
 
-    // The enterprise SOAP API endpoint used for the login call in this example.
-    public static final String SERVICES_SOAP_PARTNER_ENDPOINT = "/services/Soap/u/" + SOAP_API_VERSION;
-
-    public static final String ENV_START =
-            "<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' "
-                    + "xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' " +
-                    "xmlns:urn='urn:partner.soap.sforce.com'><soapenv:Body>";
-
-    public static final String ENV_END = "</soapenv:Body></soapenv:Envelope>";
 }
