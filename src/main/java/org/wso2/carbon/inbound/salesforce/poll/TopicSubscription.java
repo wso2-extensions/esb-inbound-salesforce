@@ -28,5 +28,4 @@ public interface TopicSubscription {
      * @return the topic subscribed to
      */
     String getTopic();
-
 }

@@ -28,7 +28,6 @@ public class ReplayExtension extends Adapter {
     private static final String EXTENSION_NAME = "replay";
     private static final String EVENT_KEY = "event";
     private static final String REPLAY_ID_KEY = "replayId";
-
     private final ConcurrentMap<String, Long> dataMap;
     private final AtomicBoolean supported = new AtomicBoolean();
 
@@ -37,7 +36,8 @@ public class ReplayExtension extends Adapter {
         this.dataMap = dataMap;
     }
 
-    @Override public boolean rcv(ClientSession session, Message.Mutable message) {
+    @Override
+    public boolean rcv(ClientSession session, Message.Mutable message) {
 
         Long replayId = getReplayId(message);
         if (this.supported.get() && replayId != null) {
@@ -50,27 +50,29 @@ public class ReplayExtension extends Adapter {
         return true;
     }
 
-    @Override public boolean rcvMeta(ClientSession session, Message.Mutable message) {
+    @Override
+    public boolean rcvMeta(ClientSession session, Message.Mutable message) {
 
         switch (message.getChannel()) {
-        case Channel.META_HANDSHAKE:
-            Map<String, Object> ext = message.getExt(false);
-            this.supported.set(ext != null && Boolean.TRUE.equals(ext.get(EXTENSION_NAME)));
+            case Channel.META_HANDSHAKE:
+                Map<String, Object> ext = message.getExt(false);
+                this.supported.set(ext != null && Boolean.TRUE.equals(ext.get(EXTENSION_NAME)));
         }
         return true;
     }
 
-    @Override public boolean sendMeta(ClientSession session, Message.Mutable message) {
+    @Override
+    public boolean sendMeta(ClientSession session, Message.Mutable message) {
 
         switch (message.getChannel()) {
-        case Channel.META_HANDSHAKE:
-            message.getExt(true).put(EXTENSION_NAME, Boolean.TRUE);
-            break;
-        case Channel.META_SUBSCRIBE:
-            if (supported.get()) {
-                message.getExt(true).put(EXTENSION_NAME, dataMap);
-            }
-            break;
+            case Channel.META_HANDSHAKE:
+                message.getExt(true).put(EXTENSION_NAME, Boolean.TRUE);
+                break;
+            case Channel.META_SUBSCRIBE:
+                if (supported.get()) {
+                    message.getExt(true).put(EXTENSION_NAME, dataMap);
+                }
+                break;
         }
         return true;
     }

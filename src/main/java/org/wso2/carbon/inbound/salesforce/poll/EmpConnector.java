@@ -49,7 +49,8 @@ public class EmpConnector {
          * (non-Javadoc)
          * @see com.salesforce.emp.connector.Subscription#cancel()
          */
-        @Override public void cancel() {
+        @Override
+        public void cancel() {
 
             replay.remove(topic);
             if (running.get() && client != null) {
@@ -62,7 +63,8 @@ public class EmpConnector {
          * (non-Javadoc)
          * @see com.salesforce.emp.connector.Subscription#getReplay()
          */
-        @Override public long getReplayFrom() {
+        @Override
+        public long getReplayFrom() {
 
             return replay.getOrDefault(topic, REPLAY_FROM_EARLIEST);
         }
@@ -71,12 +73,14 @@ public class EmpConnector {
          * (non-Javadoc)
          * @see com.salesforce.emp.connector.Subscription#getTopic()
          */
-        @Override public String getTopic() {
+        @Override
+        public String getTopic() {
 
             return topic;
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
 
             return String.format("Subscription [%s:%s]", getTopic(), getReplayFrom());
         }
@@ -195,14 +199,11 @@ public class EmpConnector {
         if (!running.get()) {
             throw new IllegalStateException(String.format("Connector[%s} has not been started", parameters.endpoint()));
         }
-
         if (replay.putIfAbsent(topic, replayFrom) != null) {
             throw new IllegalStateException(
                     String.format("Already subscribed to %s [%s]", topic, parameters.endpoint()));
         }
-
         SubscriptionImpl subscription = new SubscriptionImpl(topic, consumer);
-
         return subscription.subscribe();
     }
 
@@ -262,7 +263,6 @@ public class EmpConnector {
 
         LOG.info("Connector connecting");
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-
         try {
             httpClient.start();
         } catch (Exception e) {
@@ -271,22 +271,17 @@ public class EmpConnector {
             future.complete(false);
             return future;
         }
-
         String bearerToken = bearerToken();
-
         LongPollingTransport httpTransport = new LongPollingTransport(parameters.longPollingOptions(), httpClient) {
-            @Override protected void customize(Request request) {
+            @Override
+            protected void customize(Request request) {
 
                 request.header(AUTHORIZATION, bearerToken);
             }
         };
-
         client = new BayeuxClient(parameters.endpoint().toExternalForm(), httpTransport);
-
         client.addExtension(new ReplayExtension(replay));
-
         addListeners(client);
-
         client.handshake((c, m) -> {
             if (!m.isSuccessful()) {
                 Object error = m.get(ERROR);
@@ -301,7 +296,6 @@ public class EmpConnector {
                 future.complete(true);
             }
         });
-
         return future;
     }
 
@@ -321,7 +315,6 @@ public class EmpConnector {
         } else {
             bearerToken = parameters.bearerToken();
         }
-
         return bearerToken;
     }
 
@@ -343,7 +336,8 @@ public class EmpConnector {
         private static final String ERROR_401 = "401";
         private static final String ERROR_403 = "403";
 
-        @Override public void onMessage(ClientSessionChannel channel, Message message) {
+        @Override
+        public void onMessage(ClientSessionChannel channel, Message message) {
 
             if (!message.isSuccessful()) {
                 if (isError(message, ERROR_401) || isError(message, ERROR_403)) {
@@ -358,7 +352,6 @@ public class EmpConnector {
 
             String error = (String) message.get(Message.ERROR_FIELD);
             String failureReason = getFailureReason(message);
-
             return (error != null && error.startsWith(errorCode)) || (failureReason != null && failureReason
                     .startsWith(errorCode));
         }

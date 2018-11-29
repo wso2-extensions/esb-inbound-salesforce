@@ -22,7 +22,6 @@ import java.util.Properties;
 public class SalesforceDataHolderObject {
 
     public static int connectionTimeout;
-    public static int readTimeout;
     public static int waitTime;
     public static long replayFromOption;
     public static String soapApiVersion;
@@ -42,11 +41,6 @@ public class SalesforceDataHolderObject {
     public static void setConnectionTimeout(int connectionTimeout) {
 
         SalesforceDataHolderObject.connectionTimeout = connectionTimeout;
-    }
-
-    public static void setReadTimeout(int readTimeout) {
-
-        SalesforceDataHolderObject.readTimeout = readTimeout;
     }
 
     public static void setWaitTime(int waitTime) {

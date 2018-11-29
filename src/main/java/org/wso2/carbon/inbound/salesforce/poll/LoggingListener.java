@@ -12,8 +12,8 @@ import org.cometd.bayeux.Message;
 import org.cometd.bayeux.client.ClientSessionChannel;
 
 public class LoggingListener implements ClientSessionChannel.MessageListener {
-    private static final Log LOG = LogFactory.getLog(LoggingListener.class);
 
+    private static final Log LOG = LogFactory.getLog(LoggingListener.class);
     private boolean logSuccess;
     private boolean logFailure;
 
@@ -23,8 +23,8 @@ public class LoggingListener implements ClientSessionChannel.MessageListener {
         this.logFailure = logFailure;
     }
 
-    @Override public void onMessage(ClientSessionChannel clientSessionChannel, Message message) {
-
+    @Override
+    public void onMessage(ClientSessionChannel clientSessionChannel, Message message) {
 
         if (logSuccess && message.isSuccessful()) {
             LOG.info("Success:[" + clientSessionChannel.getId() + "] " + message);
@@ -32,7 +32,6 @@ public class LoggingListener implements ClientSessionChannel.MessageListener {
                 LOG.info("Success:[" + clientSessionChannel.getId() + "] " + message);
             }
         }
-
         if (logFailure && !message.isSuccessful()) {
             LOG.info("Failure:[" + clientSessionChannel.getId() + "] " + message);
             if (LOG.isDebugEnabled()) {

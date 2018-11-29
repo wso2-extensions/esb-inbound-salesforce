@@ -29,7 +29,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.InputMismatchException;
 import java.util.Map;
 import java.util.Properties;
@@ -52,7 +51,6 @@ import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 
-
 /**
  * Salesforce streaming api Inbound.
  */
@@ -69,16 +67,15 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     private long replayFromOption;
     // optional parameters.
     private int connectionTimeout;
-    private int readTimeout;
     private int waitTime;
     private boolean isPolled = false;
     private String tenantDomain;
     private final RegistryService registryService = IdentityTenantUtil.getRegistryService();
-    private static EmpConnector connector;
-
+    private EmpConnector connector;
 
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
-            long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination, boolean sequential) {
+                                long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
+                                boolean sequential) {
 
         super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
                 sequential);
@@ -93,7 +90,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     private static long readFromGivenFile(String filePath) {
 
         String str;
-        BufferedReader bufferedReader;
+        BufferedReader bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(new FileReader(filePath));
             str = bufferedReader.readLine();
@@ -103,9 +100,18 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             } else
                 return SalesforceConstant.REPLAY_FROM_TIP;
         } catch (IOException e) {
-            LOG.error("Unable to read file from given path", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error("Unable to read file from given path", e);
+            }
+        } finally {
+            try {
+                bufferedReader.close();
+            } catch (IOException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.error("Unable to clode resources", e);
+                }
+            }
         }
-
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
@@ -121,13 +127,11 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 registry.put(SalesforceConstant.RESOURCE_PATH, resource);
                 registry.commitTransaction();
             }
-
         } catch (RegistryException e) {
             LOG.error("Unable to read resource eventID from " + SalesforceConstant.RESOURCE_PATH);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
-
     }
 
     private long getRegistryEventID() {
@@ -136,7 +140,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         long eventIDFromDB;
         try {
             Registry registry = getRegistryForTenant(tenantDomain);
-
             if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)
                     && registry.get(SalesforceConstant.RESOURCE_PATH) != null
                     && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME)
@@ -145,11 +148,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 eventIDFromDB = Long.parseLong(
                         registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
             } else {
-
                 eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
             }
             return eventIDFromDB;
-
         } catch (RegistryException e) {
             LOG.error("Unable to get the property eventID from the resource " + SalesforceConstant.RESOURCE_PATH, e);
         } finally {
@@ -214,13 +215,11 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Starting to load the salesforce credentials");
         }
-
         userName = properties.getProperty(SalesforceConstant.USER_NAME);
         salesforceObject = properties.getProperty(SalesforceConstant.SOBJECT);
         password = properties.getProperty(SalesforceConstant.PASSWORD);
         loginEndpoint = properties.getProperty(SalesforceConstant.LOGIN_ENDPOINT);
         String packageVersion = properties.getProperty(SalesforceConstant.PACKAGE_VERSION);
-
         if (StringUtils.isEmpty(userName) && StringUtils.isEmpty(salesforceObject) && StringUtils.isEmpty(password)
                 && StringUtils.isEmpty(loginEndpoint) && StringUtils.isEmpty(packageVersion)) {
             handleException("Mandatory Parameters can't be Empty...");
@@ -248,16 +247,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             }
         }
         SalesforceDataHolderObject.setConnectionTimeout(connectionTimeout);
-        if (properties.getProperty(SalesforceConstant.READ_TIMEOUT) == null) {
-            readTimeout = SalesforceConstant.READ_TIMEOUT_DEFAULT;
-        } else {
-            try {
-                readTimeout = Integer.parseInt(properties.getProperty(SalesforceConstant.READ_TIMEOUT));
-            } catch (NumberFormatException e) {
-                LOG.error("The Value should be in Number", e);
-            }
-        }
-        SalesforceDataHolderObject.setReadTimeout(readTimeout);
         if (properties.getProperty(SalesforceConstant.WAIT_TIME) == null) {
             waitTime = SalesforceConstant.WAIT_TIME_DEFAULT;
         } else {
@@ -284,12 +273,10 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 //read id from  registry db
                 replayFromOption = getRegistryEventID();
             }
-
         } else {
             replayFromOption = SalesforceConstant.REPLAY_FROM_TIP;
         }
         SalesforceDataHolderObject.setReplayFromOption(replayFromOption);
-
         if (properties.getProperty(SalesforceConstant.SOAP_API_VERSION) == null) {
             SalesforceDataHolderObject.setSoapApiVersion(SalesforceConstant.DEFAULT_SOAP_API_VERSION);
         } else {
@@ -306,11 +293,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         //Establishing connection with Salesforce streaming api.
         try {
             if (!isPolled) {
-                if (connector != null && connector.isConnected()) {
+                if (connector != null) {
                     connector.stop();
                 }
-
-
                 makeConnect();
                 isPolled = true;
             }
@@ -331,7 +316,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             if (LOG.isDebugEnabled()) {
                 LOG.info("id for the event recieved: " + id);
             }
-
             updateRegistryEventID(id);
             injectMessage(message, SalesforceConstant.CONTENT_TYPE);
             if (LOG.isDebugEnabled()) {
@@ -343,6 +327,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     }
 
     private void handleException(String msg) {
+
         LOG.error(msg);
         throw new SynapseException(msg);
     }

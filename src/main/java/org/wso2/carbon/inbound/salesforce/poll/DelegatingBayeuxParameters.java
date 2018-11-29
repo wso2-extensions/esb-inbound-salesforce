@@ -27,52 +27,62 @@ public class DelegatingBayeuxParameters implements BayeuxParameters {
         this.parameters = parameters;
     }
 
-    @Override public String bearerToken() {
+    @Override
+    public String bearerToken() {
 
         return parameters.bearerToken();
     }
 
-    @Override public URL endpoint() {
+    @Override
+    public URL endpoint() {
 
         return parameters.endpoint();
     }
 
-    @Override public long keepAlive() {
+    @Override
+    public long keepAlive() {
 
         return parameters.keepAlive();
     }
 
-    @Override public TimeUnit keepAliveUnit() {
+    @Override
+    public TimeUnit keepAliveUnit() {
 
         return parameters.keepAliveUnit();
     }
 
-    @Override public Map<String, Object> longPollingOptions() {
+    @Override
+    public Map<String, Object> longPollingOptions() {
 
         return parameters.longPollingOptions();
     }
 
-    @Override public int maxBufferSize() {
+    @Override
+    public int maxBufferSize() {
 
         return parameters.maxBufferSize();
     }
 
-    @Override public int maxNetworkDelay() {
+    @Override
+    public int maxNetworkDelay() {
 
         return parameters.maxNetworkDelay();
     }
 
-    @Override public Collection<? extends Proxy> proxies() {
+    @Override
+    public Collection<? extends Proxy> proxies() {
 
         return parameters.proxies();
     }
 
-    @Override public SslContextFactory sslContextFactory() {
+    @Override
+    public SslContextFactory sslContextFactory() {
 
         return parameters.sslContextFactory();
     }
 
-    @Override public String version() {
+    @Override
+    public String version() {
 
         return SalesforceDataHolderObject.packageVersion;
     }

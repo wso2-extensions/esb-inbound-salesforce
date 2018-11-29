@@ -31,25 +31,16 @@ public class SalesforceConstant {
     public static final long REPLAY_FROM_TIP = -1L;
     public static final String RESOURCE_PATH = "connector/salesforce/event";
     public static final String PROPERTY_NAME = "eventID";
-
     //object for the salesforce inbound endpoint
     public static final String SOBJECT = "connection.salesforce.salesforceObject";
-
     //default parameters for the salesforce inbound endpoint
     public static final String CONNECTION_TIMEOUT = "connection.salesforce.connectionTimeout";
     public static final int CONNECTION_TIMEOUT_DEFAULT = 10 * 1000;
-
-    public static final String READ_TIMEOUT = "connection.salesforce.readTimeout";
-    public static final int READ_TIMEOUT_DEFAULT = 10 * 1000;
-
     public static final String WAIT_TIME = "connection.salesforce.waitTime";
     public static final int WAIT_TIME_DEFAULT = 24 * 60 * 60 * 1000;
-
     //content type of the message
     public static final String CONTENT_TYPE = "application/json";
-
     public static final String REPLAY_ID = "replayId";
     public static final String EVENT = "event";
     public static final String DEFAULT_SOAP_API_VERSION = "22.0";
-
 }

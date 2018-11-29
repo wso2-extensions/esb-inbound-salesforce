@@ -32,7 +32,8 @@ public class BearerTokenProvider implements Function<Boolean, String> {
         return parameters;
     }
 
-    @Override public String apply(Boolean reAuth) {
+    @Override
+    public String apply(Boolean reAuth) {
 
         if (reAuth) {
             try {
