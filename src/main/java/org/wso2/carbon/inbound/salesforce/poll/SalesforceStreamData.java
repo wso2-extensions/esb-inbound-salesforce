@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -87,6 +87,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         this.injectingSeq = injectingSeq;
     }
 
+    /** Read event id to replay from specific file. */
     private static long readFromGivenFile(String filePath) {
 
         String str;
@@ -115,6 +116,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
+    /** Store event id to replay in the config registry DB. */
     private void updateRegistryEventID(long id) {
 
         startTenantFlow(tenantDomain);
@@ -134,6 +136,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 
+    /** Read event id to replay from registry DB.*/
     private long getRegistryEventID() {
 
         startTenantFlow(tenantDomain);
@@ -159,22 +162,25 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
+    /** Tenant flow start to get tenant domain. */
     private void startTenantFlow(String tenantDomain) {
 
         PrivilegedCarbonContext.startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
     }
 
+    /** Get registry for the tanant. */
     private Registry getRegistryForTenant(String tenantDomain) throws RegistryException {
 
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         return registryService.getConfigSystemRegistry(tenantId);
     }
 
+    /** Connecting to Salesforce and listning to events*/
     private void makeConnect() throws Throwable {
 
         Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
-                ((HashMap<String, Long>) event.
+                (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
         BearerTokenProvider tokenProvider = new BearerTokenProvider(() -> {
             try {
@@ -190,6 +196,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 .addListener(META_DISCONNECT, loggingListener).addListener(META_SUBSCRIBE, loggingListener)
                 .addListener(META_UNSUBSCRIBE, loggingListener);
         connector.setBearerTokenProvider(tokenProvider);
+        if(connector.isConnected()){connector.stop();}
         connector.start().get(waitTime, TimeUnit.MILLISECONDS);
         TopicSubscription subscription;
         try {
@@ -201,7 +208,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         } catch (TimeoutException e) {
             LOG.error("Timed out subscribing", e);
         } catch (InterruptedException e) {
-            LOG.error("Unexpected error occured while subscribing to event/topic");
+            LOG.error("Unexpected error occured while subscribing to event/topic", e);
         }
     }
 
@@ -293,9 +300,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         //Establishing connection with Salesforce streaming api.
         try {
             if (!isPolled) {
-                if (connector != null) {
-                    connector.stop();
-                }
+//                if (connector != null) {
+//                    connector.stop();
+//                }
                 makeConnect();
                 isPolled = true;
             }
@@ -330,5 +337,13 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
         LOG.error(msg);
         throw new SynapseException(msg);
+    }
+
+    @Override
+    public void destroy() {
+
+        if (connector != null) {
+            connector.stop();
+        }
     }
 }

@@ -18,7 +18,9 @@
 package org.wso2.carbon.inbound.salesforce.poll;
 
 import java.util.Properties;
-
+/**
+ * Salesforce configuration data holder class.
+ */
 public class SalesforceDataHolderObject {
 
     public static int connectionTimeout;

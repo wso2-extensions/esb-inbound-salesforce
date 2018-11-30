@@ -27,13 +27,11 @@ public class LoggingListener implements ClientSessionChannel.MessageListener {
     public void onMessage(ClientSessionChannel clientSessionChannel, Message message) {
 
         if (logSuccess && message.isSuccessful()) {
-            LOG.info("Success:[" + clientSessionChannel.getId() + "] " + message);
             if (LOG.isDebugEnabled()) {
                 LOG.info("Success:[" + clientSessionChannel.getId() + "] " + message);
             }
         }
         if (logFailure && !message.isSuccessful()) {
-            LOG.info("Failure:[" + clientSessionChannel.getId() + "] " + message);
             if (LOG.isDebugEnabled()) {
                 LOG.info("Failure:[" + clientSessionChannel.getId() + "] " + message);
             }

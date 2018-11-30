@@ -370,7 +370,7 @@ public class EmpConnector {
         }
     }
 
-    private static class MessageListenerInfo {
+    private class MessageListenerInfo {
 
         private String channelName;
         private ClientSessionChannel.MessageListener messageListener;
