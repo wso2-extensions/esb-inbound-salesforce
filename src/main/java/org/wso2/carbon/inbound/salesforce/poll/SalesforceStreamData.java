@@ -99,7 +99,8 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             if (str != null && !str.isEmpty()) {
                 return Long.parseLong(str);
             } else
-                return SalesforceConstant.REPLAY_FROM_TIP;
+                LOG.warn("Event id not specified in the file default id used");
+            return SalesforceConstant.REPLAY_FROM_TIP;
         } catch (IOException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.error("Unable to read file from given path", e);
@@ -113,6 +114,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 }
             }
         }
+        LOG.warn("Default event id will use");
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
@@ -128,6 +130,8 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 resource.setProperty(SalesforceConstant.PROPERTY_NAME, "" + id);
                 registry.put(SalesforceConstant.RESOURCE_PATH, resource);
                 registry.commitTransaction();
+            } else {
+                LOG.warn("Resource not exists.Please create resource");
             }
         } catch (RegistryException e) {
             LOG.error("Unable to read resource eventID from " + SalesforceConstant.RESOURCE_PATH);
@@ -151,6 +155,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 eventIDFromDB = Long.parseLong(
                         registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
             } else {
+                LOG.warn("Event id not specified in the resource in registry db. Default id used");
                 eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
             }
             return eventIDFromDB;
@@ -300,9 +305,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         //Establishing connection with Salesforce streaming api.
         try {
             if (!isPolled) {
-//                if (connector != null) {
-//                    connector.stop();
-//                }
                 makeConnect();
                 isPolled = true;
             }
@@ -333,12 +335,14 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 
+    /** handle Exception. */
     private void handleException(String msg) {
 
         LOG.error(msg);
         throw new SynapseException(msg);
     }
 
+    /** stop the connector when redeploy or shutdown the server. */
     @Override
     public void destroy() {
 
