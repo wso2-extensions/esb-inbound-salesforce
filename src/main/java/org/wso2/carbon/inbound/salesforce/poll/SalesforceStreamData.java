@@ -97,9 +97,13 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             str = bufferedReader.readLine();
             bufferedReader.close();
             if (str != null && !str.isEmpty()) {
-                return Long.parseLong(str);
+                try {
+                    return Long.parseLong(str);
+                } catch (NumberFormatException e) {
+                    LOG.warn("Event id is not a number. Default id used");
+                }
             } else
-                LOG.warn("Event id not specified in the file default id used");
+                LOG.warn("Event id not specified in the file. Default id used");
             return SalesforceConstant.REPLAY_FROM_TIP;
         } catch (IOException e) {
             if (LOG.isDebugEnabled()) {
@@ -152,8 +156,14 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                     && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME)
                     != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
                     .getProperty(SalesforceConstant.PROPERTY_NAME).isEmpty()) {
-                eventIDFromDB = Long.parseLong(
-                        registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
+                try {
+                    eventIDFromDB = Long.parseLong(
+                            registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
+                } catch (NumberFormatException e) {
+                    eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
+                    LOG.warn("Event id is not a number. Default id used");
+                }
+
             } else {
                 LOG.warn("Event id not specified in the resource in registry db. Default id used");
                 eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
