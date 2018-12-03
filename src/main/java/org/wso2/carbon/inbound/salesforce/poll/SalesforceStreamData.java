@@ -95,7 +95,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         try {
             bufferedReader = new BufferedReader(new FileReader(filePath));
             str = bufferedReader.readLine();
-            bufferedReader.close();
             if (str != null && !str.isEmpty()) {
                 try {
                     return Long.parseLong(str);
@@ -114,11 +113,11 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 bufferedReader.close();
             } catch (IOException e) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.error("Unable to clode resources", e);
+                    LOG.error("Unable to close resources", e);
                 }
             }
         }
-        LOG.warn("Default event id will use");
+        LOG.warn("Failed to read id. Default event id will use");
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
@@ -161,7 +160,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                             registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
                 } catch (NumberFormatException e) {
                     eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
-                    LOG.warn("Event id is not a number. Default id used");
+                    LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");
                 }
 
             } else {

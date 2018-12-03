@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class EmpConnector {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EmpConnector.class);
     private static final String ERROR = "error";
     private static final String FAILURE = "failure";
 
@@ -110,7 +111,6 @@ public class EmpConnector {
     private static long REPLAY_FROM_TIP = -1L;
 
     private static String AUTHORIZATION = "Authorization";
-    private static final Logger LOG = LoggerFactory.getLogger(EmpConnector.class);
 
     private volatile BayeuxClient client;
     private final HttpClient httpClient;

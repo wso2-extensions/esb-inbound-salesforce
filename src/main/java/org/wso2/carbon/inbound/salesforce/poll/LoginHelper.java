@@ -110,13 +110,13 @@ public class LoginHelper {
             @Override
             public String bearerToken() {
 
-                throw new IllegalStateException("Have not authenticated");
+                throw new IllegalStateException("Failed to authenticated");
             }
 
             @Override
             public URL endpoint() {
 
-                throw new IllegalStateException("Have not established replay endpoint");
+                throw new IllegalStateException("Replay endpoint has not been established");
             }
         });
     }
