@@ -2,9 +2,9 @@
 
 The Salesforce streaming inbound endpoint allows you to perform various Salesforce streaming data via WSO2 ESB.
 
-1.The Salesforce streaming API receives notifications for changes to Salesforce data that match a Salesforce Object Query Language (SOQL) query you define, in a secure and scalable way. For more information see [Salesforce streaming documentation](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/quick_start_workbench.htm) .
+1. The Salesforce streaming API receives notifications for changes to Salesforce data that match a Salesforce Object Query Language (SOQL) query you define, in a secure and scalable way. For more information see [Salesforce streaming documentation](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/quick_start_workbench.htm) .
 
-2.[Platform events](#platform-event)
+2. [Platform events](#platform-event)
 
 
 
@@ -13,9 +13,9 @@ Reliable message delivery is only available in Salesforce API version 37.0 and l
 ```
 
 ## How To Use
-1.[Download the inbound endpoit jar](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project **mvn clean install** to get the jar and add it in the <ESB-Home>/dropin directory.
+1. [Download the inbound endpoit jar](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project **mvn clean install** to get the jar and add it in the <ESB-Home>/dropin directory.
 
-2.Create a sequence to print logs as follows.
+2. Create a sequence to print logs as follows.
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="test" onError="fault" xmlns="http://ws.apache.org/ns/synapse">
@@ -73,7 +73,7 @@ Now that you have configured the Salesforce streaming inbound endpoint, use the 
    </parameters>
 </inboundEndpoint>
 ```
-* connection.salesforce.replay: replay enable or disable. If this enabled read from event id stored in registry DB or from the text file stored in the local machine.
+* connection.salesforce.replay: replay **enable** or **disable**. If this enabled read from event id stored in registry DB or from the text file stored in the local machine.
 * connection.salesforce.EventIDStoredFilePath:
     - when replay enabled, leave this property to empty if need to replay from last event id stored in registry DB (property-“eventID” resource path:connector/salesforce/event).
     - when replay enabled and specify a text file to replay onwards the stored event id from the file specified here.
