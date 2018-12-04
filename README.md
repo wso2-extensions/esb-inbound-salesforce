@@ -1,32 +1,32 @@
-# Configuring Salesforce Inbound Endpoint
+# Configuring a Salesforce Inbound Endpoint
 
-The Salesforce streaming inbound endpoint allows you to perform various Salesforce streaming data via WSO2 ESB.
+The Salesforce streaming Inbound Endpoint allows you to perform various operations on Salesforce streaming data via WSO2 ESB.
 
-1. The Salesforce streaming API receives notifications for changes to Salesforce data that match a Salesforce Object Query Language (SOQL) query you define, in a secure and scalable way. For more information see [Salesforce streaming documentation](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/quick_start_workbench.htm) .
+1. The Salesforce streaming API receives notifications based on the changes that happen to Salesforce data with respect to an SQQL (Salesforce Object Query Language) query you define, in a secured and scalable way. For more information, go to [Salesforce streaming documentation](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/quick_start_workbench.htm).
 
 2. [Platform events](#platform-event)
 
 
 
 ```
-Reliable message delivery is only available in Salesforce API version 37.0 and later.
+Reliable message delivery is only available from the Salesforce API version 37.0 and above.
 ```
 
-## How To Use
-1. Either [download the inbound endpoit jar](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project **mvn clean install** to get the jar and add it in the <ESB-Home>/dropin directory.
+## How to use
+1. Either [download the inbound endpoit JAR file](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project by executing the **mvn clean install** command to get the jar and by adding it in the <ESB-Home>/dropin directory.
 
-2. Create a sequence to print logs as follows.
+2. Create a Sequence to print the logs as follows.
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="test" onError="fault" xmlns="http://ws.apache.org/ns/synapse">
     <log level="full"/>
 </sequence>
 ```
-3. Create pushTopic and then retrieve information or configure for platform event.
+3. Create a Push Topic and then retrieve information or configure a Platform Event.
 
-## Creating a PushTopic 
-you need to first [create a custome object in salesforce](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_object.htm) and [create PushTopic](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_a_pushtopic.htm) that contains an SOQL query.
-Go to the developer console of your Salesforce account and click on **Debug->Open Execute Anonymous Window.** Add the following entry in the Enter Apex Code window. 
+## Creating a Push Topic 
+First, [create a custom object in Salesforce](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_object.htm) and then [create a Push Topic](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_a_pushtopic.htm) that contains an SOQL query.
+Next, go to the Developer Console of your Salesforce account and click **Debug->Open Execute Anonymous Window.**. Then, add the following entry in the **Enter Apex Code window**. 
 
 ```
 PushTopic pushTopic = new PushTopic();
@@ -43,9 +43,9 @@ insert pushTopic;
 Click **Execute**.
 
 
-## Retrieving the Account Information 
-WSO2 ESB Salesforce inbound endpoint acts as a message consumer. It creates a connection to the Salesforce account, consumes the Salesforce data and injects the data to the ESB sequence.
-Now that you have configured the Salesforce streaming inbound endpoint, use the following ESB inbound endpoint configuration to retrieve account details from your Salesforce account.
+## Retrieving account information 
+WSO2 ESB Salesforce Inbound Endpoint acts as a message consumer. It creates a connection to the Salesforce account, consumes the Salesforce data and injects the data to the ESB Sequence.
+Now, that you have configured the Salesforce streaming Inbound Endpoint, use the following ESB Inbound Endpoint configuration to retrieve account details from your Salesforce account.
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -73,31 +73,31 @@ Now that you have configured the Salesforce streaming inbound endpoint, use the 
    </parameters>
 </inboundEndpoint>
 ```
-* connection.salesforce.replay: replay **enable** or **disable**. If this enabled read from event id stored in registry DB or from the text file stored in the local machine.
+* connection.salesforce.replay: replay **enable** or **disable**. Enabling this will read the event ID stored in the Registry DB or from the text file stored in the local machine.
 * connection.salesforce.EventIDStoredFilePath:
-    - when replay enabled, leave this property to empty if need to replay from last event id stored in registry DB (property-“eventID” resource path:connector/salesforce/event).
-    - when replay enabled and specify a text file to replay onwards the stored event id from the file specified here.
+    - when replay is enabled, do not define any value for this property (i.e., keep it blank), to replay from the last event ID stored in the Registry DB (property-“eventID” resource path:connector/salesforce/event).
+    - when replay is enabled, specify the directory path of a text file to start replaying from the event ID stored in it. 
     ```
-    In case of failure default value will be used to retriev from current events. Create propety “eventID” in registry DB in resource path connector/salesforce/event. 
+    In case of a failure, the default value will be used to retrieve IDs from current events. Create the “eventID” property in the Registry DB in the connector/salesforce/event resource path . 
     ```
-* connection.salesforce.packageVersion: The version of the salesforce API.
-* connection.salesforce.salesforceObject : The name of the push topic or platform event that is added to the Salesforce account.
-* connection.salesforce.loginEndpoint: The endpoint for the Salesforce account.
-* connection.salesforce.userName:  The user name for accessing the Salesforce account.
-* connection.salesforce.password: The password provided here is a concatenation of the user password and the security token provided by Salesforce.[information on creating a security token in Salesforce](https://help.salesforce.com/articleView?id=user_security_token.htm&type=5).
-* connection.salesforce.waitTime: The time to connect to the Salesforce account(default : 5 * 1000 ms).
-* connection.salesforce.connectionTimeout: The time to wait when connecting to the client(default : 20 * 1000 ms).
-* connection.salesforce.soapApiVersion: The version of the salesforce soap API.
+* connection.salesforce.packageVersion: The version of the Salesforce API.
+* connection.salesforce.salesforceObject : The name of the Push Topic or the Platform Event that is added to the Salesforce account.
+* connection.salesforce.loginEndpoint: The Endpoint of the Salesforce account.
+* connection.salesforce.userName:  The username for accessing the Salesforce account.
+* connection.salesforce.password: The password provided here is a concatenation of the user password and the security token provided by Salesforce. For more information, see[information on creating a security token in Salesforce].(https://help.salesforce.com/articleView?id=user_security_token.htm&type=5).
+* connection.salesforce.waitTime: The time to wait to connect to the Salesforce account(default : 5 * 1000 ms).
+* connection.salesforce.connectionTimeout: The time to wait to connect to the client(default : 20 * 1000 ms).
+* connection.salesforce.soapApiVersion: The version of the Salesforce SOAP API.
 
 ## Platform Event
-[Define a platform event](https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/platform_events_intro.htm) in the same way you define a custom object in salesforce.
+[Define a Platform Event](https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/platform_events_intro.htm) in the same way you define a custom object in Salesforce.
 
 
-In ESB configuration specify the event need to subscribe.
+In the ESB configuration, specify the Event to which you need to subscribe.
 ```
 <parameter name="connection.salesforce.salesforceObject">/event/InvoiceStatementReading1s__e</parameter>
 ```
-Go to the developer console of your Salesforce account and click on **Debug->Open Execute Anonymous Window.** Add the following entry in the Enter Apex Code window.See more [here](https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/platform_events_publish_apex.htm).
+Go to the Developer Console of your Salesforce account and click **Debug->Open Execute Anonymous Window.** Add the following entry in the **Enter Apex Code window.** [For instructions, go to Publish Event Messages with Apex.](https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/platform_events_publish_apex.htm).
 
 ```
 InvoiceStatementReading1s__e event = new InvoiceStatementReading1s__e(Status__c='nnn24');
@@ -118,14 +118,14 @@ if (sr.isSuccess()) {
 }
 ```
 Click **Execute**.
-Event will be triggered in the ESB real time.
+The Event will be triggered in the ESB in real time.
 
-## How to Contribute
+## How to contribute
 
-  * Please report issues at [GitHub Issue](https://github.com/wso2-extensions/esb-inbound-salesforce/issues).
+  * Report [GitHub Issues](https://github.com/wso2-extensions/esb-inbound-salesforce/issues).
    
-  * Send your contributions as pull requests to [master branch](https://github.com/wso2-extensions/esb-inbound-salesforce).
+  * Send your contributions as pull requests to the [master branch](https://github.com/wso2-extensions/esb-inbound-salesforce).
 
-Also you can create a third party connector and publish in WSO2 Connector Store.
+Also, you can create a third party connector and publish it in the WSO2 Connector Store.
 
 https://docs.wso2.com/display/ESBCONNECTORS/Creating+a+Third+Party+Connector+and+Publishing+in+WSO2+Connector+Store
