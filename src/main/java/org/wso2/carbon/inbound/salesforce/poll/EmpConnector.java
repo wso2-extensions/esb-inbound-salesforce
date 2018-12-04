@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, salesforce.com, inc.
+ * Copyright (c) 2016-2018, salesforce.com, inc.
  * All rights reserved.
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.TXT file in the repo root  or https://opensource.org/licenses/BSD-3-Clause
@@ -9,11 +9,14 @@ package org.wso2.carbon.inbound.salesforce.poll;
 import java.net.ConnectException;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Future;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
 import org.cometd.bayeux.Channel;
 import org.cometd.bayeux.Message;
 import org.cometd.bayeux.client.ClientSessionChannel;
@@ -40,7 +43,6 @@ public class EmpConnector {
         private final Consumer<Map<String, Object>> consumer;
 
         private SubscriptionImpl(String topic, Consumer<Map<String, Object>> consumer) {
-
             this.topic = topic;
             this.consumer = consumer;
             subscriptions.add(this);
@@ -52,7 +54,6 @@ public class EmpConnector {
          */
         @Override
         public void cancel() {
-
             replay.remove(topic);
             if (running.get() && client != null) {
                 client.getChannel(topic).unsubscribe();
@@ -66,7 +67,6 @@ public class EmpConnector {
          */
         @Override
         public long getReplayFrom() {
-
             return replay.getOrDefault(topic, REPLAY_FROM_EARLIEST);
         }
 
@@ -76,18 +76,15 @@ public class EmpConnector {
          */
         @Override
         public String getTopic() {
-
             return topic;
         }
 
         @Override
         public String toString() {
-
             return String.format("Subscription [%s:%s]", getTopic(), getReplayFrom());
         }
 
         Future<TopicSubscription> subscribe() {
-
             Long replayFrom = getReplayFrom();
             ClientSessionChannel channel = client.getChannel(topic);
             CompletableFuture<TopicSubscription> future = new CompletableFuture<>();
@@ -109,23 +106,18 @@ public class EmpConnector {
 
     private static long REPLAY_FROM_EARLIEST = -2L;
     private static long REPLAY_FROM_TIP = -1L;
-
     private static String AUTHORIZATION = "Authorization";
-
     private volatile BayeuxClient client;
     private final HttpClient httpClient;
     private final BayeuxParameters parameters;
     private final ConcurrentMap<String, Long> replay = new ConcurrentHashMap<>();
     private final AtomicBoolean running = new AtomicBoolean();
-
     private final Set<SubscriptionImpl> subscriptions = new CopyOnWriteArraySet<>();
     private final Set<MessageListenerInfo> listenerInfos = new CopyOnWriteArraySet<>();
-
     private Function<Boolean, String> bearerTokenProvider;
     private AtomicBoolean reauthenticate = new AtomicBoolean(false);
 
     public EmpConnector(BayeuxParameters parameters) {
-
         this.parameters = parameters;
         httpClient = new HttpClient(parameters.sslContextFactory());
         httpClient.getProxyConfiguration().getProxies().addAll(parameters.proxies());
@@ -138,7 +130,6 @@ public class EmpConnector {
      * @return true if connection was established, false otherwise
      */
     public Future<Boolean> start() {
-
         if (running.compareAndSet(false, true)) {
             addListener(Channel.META_CONNECT, new AuthFailureListener());
             addListener(Channel.META_HANDSHAKE, new AuthFailureListener());
@@ -154,7 +145,6 @@ public class EmpConnector {
      * Stop the connector
      */
     public void stop() {
-
         if (!running.compareAndSet(true, false)) {
             return;
         }
@@ -181,7 +171,6 @@ public class EmpConnector {
      * @param bearerTokenProvider a bearer token provider function.
      */
     public void setBearerTokenProvider(Function<Boolean, String> bearerTokenProvider) {
-
         this.bearerTokenProvider = bearerTokenProvider;
     }
 
@@ -195,7 +184,6 @@ public class EmpConnector {
      * exception
      */
     public Future<TopicSubscription> subscribe(String topic, long replayFrom, Consumer<Map<String, Object>> consumer) {
-
         if (!running.get()) {
             throw new IllegalStateException(String.format("Connector[%s} has not been started", parameters.endpoint()));
         }
@@ -216,7 +204,6 @@ public class EmpConnector {
      * exception
      */
     public Future<TopicSubscription> subscribeEarliest(String topic, Consumer<Map<String, Object>> consumer) {
-
         return subscribe(topic, REPLAY_FROM_EARLIEST, consumer);
     }
 
@@ -229,38 +216,31 @@ public class EmpConnector {
      * exception
      */
     public Future<TopicSubscription> subscribeTip(String topic, Consumer<Map<String, Object>> consumer) {
-
         return subscribe(topic, REPLAY_FROM_TIP, consumer);
     }
 
     public EmpConnector addListener(String channel, ClientSessionChannel.MessageListener messageListener) {
-
         listenerInfos.add(new MessageListenerInfo(channel, messageListener));
         return this;
     }
 
     public boolean isConnected() {
-
         return client != null && client.isConnected();
     }
 
     public boolean isDisconnected() {
-
         return client == null || client.isDisconnected();
     }
 
     public boolean isHandshook() {
-
         return client != null && client.isHandshook();
     }
 
     public long getLastReplayId(String topic) {
-
         return replay.get(topic);
     }
 
     private Future<Boolean> connect() {
-
         LOG.info("Connector connecting");
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
@@ -300,14 +280,12 @@ public class EmpConnector {
     }
 
     private void addListeners(BayeuxClient client) {
-
         for (MessageListenerInfo info : listenerInfos) {
             client.getChannel(info.getChannelName()).addListener(info.getMessageListener());
         }
     }
 
     private String bearerToken() {
-
         String bearerToken;
         if (bearerTokenProvider != null) {
             bearerToken = bearerTokenProvider.apply(reauthenticate.get());
@@ -319,7 +297,7 @@ public class EmpConnector {
     }
 
     private void reconnect() {
-
+        stop();
         if (running.compareAndSet(false, true)) {
             connect();
         } else {
@@ -342,14 +320,12 @@ public class EmpConnector {
             if (!message.isSuccessful()) {
                 if (isError(message, ERROR_401) || isError(message, ERROR_403)) {
                     reauthenticate.set(true);
-                    stop();
                     reconnect();
                 }
             }
         }
 
         private boolean isError(Message message, String errorCode) {
-
             String error = (String) message.get(Message.ERROR_FIELD);
             String failureReason = getFailureReason(message);
             return (error != null && error.startsWith(errorCode)) || (failureReason != null && failureReason
@@ -357,7 +333,6 @@ public class EmpConnector {
         }
 
         private String getFailureReason(Message message) {
-
             String failureReason = null;
             Map<String, Object> ext = message.getExt();
             if (ext != null) {
@@ -376,18 +351,15 @@ public class EmpConnector {
         private ClientSessionChannel.MessageListener messageListener;
 
         MessageListenerInfo(String channelName, ClientSessionChannel.MessageListener messageListener) {
-
             this.channelName = channelName;
             this.messageListener = messageListener;
         }
 
         String getChannelName() {
-
             return channelName;
         }
 
         ClientSessionChannel.MessageListener getMessageListener() {
-
             return messageListener;
         }
     }

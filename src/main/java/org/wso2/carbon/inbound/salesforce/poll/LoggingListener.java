@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, salesforce.com, inc.
+ * Copyright (c) 2016-2018, salesforce.com, inc.
  * All rights reserved.
  * Licensed under the BSD 3-Clause license.
  * For full license text, see LICENSE.TXT file in the repo root  or https://opensource.org/licenses/BSD-3-Clause
@@ -18,14 +18,12 @@ public class LoggingListener implements ClientSessionChannel.MessageListener {
     private boolean logFailure;
 
     public LoggingListener(boolean logSuccess, boolean logFailure) {
-
         this.logSuccess = logSuccess;
         this.logFailure = logFailure;
     }
 
     @Override
     public void onMessage(ClientSessionChannel clientSessionChannel, Message message) {
-
         if (logSuccess && message.isSuccessful()) {
             if (LOG.isDebugEnabled()) {
                 LOG.info("Success:[" + clientSessionChannel.getId() + "] " + message);

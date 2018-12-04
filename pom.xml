@@ -22,6 +22,8 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     <groupId>org.apache.synapse.inbound</groupId>
     <artifactId>org.wso2.carbon.inbound.salesforce.poll</artifactId>
     <version>1.0.0</version>
+    <name>Salesforce Polling Consumer</name>
+    <url>http://wso2.org</url>
     <packaging>bundle</packaging>
     <dependencies>
         <!-- salesforce -->
@@ -65,11 +67,9 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         </dependency>
     </dependencies>
     <scm>
-        <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git
-        </connection>
+        <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</connection>
         <url>https://github.com/wso2-extensions/esb-inbound-salesforce.git</url>
-        <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce
-        </developerConnection>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <repositories>

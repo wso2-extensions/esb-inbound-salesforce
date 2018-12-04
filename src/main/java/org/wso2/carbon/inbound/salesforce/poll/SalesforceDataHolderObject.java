@@ -32,43 +32,36 @@ public class SalesforceDataHolderObject {
 
     /** set soap API version. */
     public static void setSoapApiVersion(String soapApiVersion) {
-
         SalesforceDataHolderObject.soapApiVersion = soapApiVersion;
     }
 
     /** get soap API version. */
     public static String getSoapApiVersion() {
-
         return soapApiVersion;
     }
 
     /** set connection timeout. */
     public static void setConnectionTimeout(int connectionTimeout) {
-
         SalesforceDataHolderObject.connectionTimeout = connectionTimeout;
     }
 
     /** Set wait time to connect */
     public static void setWaitTime(int waitTime) {
-
         SalesforceDataHolderObject.waitTime = waitTime;
     }
 
     /** Set replay option. */
     public static void setReplayFromOption(long replayFromOption) {
-
         SalesforceDataHolderObject.replayFromOption = replayFromOption;
     }
 
     /** Set package version of salesforce. */
     public static void setPackageVersion(String packageVersion) {
-
         SalesforceDataHolderObject.packageVersion = packageVersion;
     }
 
     /** set properties */
     public static void setProperties(Properties properties) {
-
         SalesforceDataHolderObject.properties = properties;
     }
 }

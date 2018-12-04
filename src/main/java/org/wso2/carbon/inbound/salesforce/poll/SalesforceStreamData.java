@@ -23,7 +23,6 @@ import static org.cometd.bayeux.Channel.META_HANDSHAKE;
 import static org.cometd.bayeux.Channel.META_SUBSCRIBE;
 import static org.cometd.bayeux.Channel.META_UNSUBSCRIBE;
 import static org.wso2.carbon.inbound.salesforce.poll.SalesforceDataHolderObject.setProperties;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +74,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
                                 boolean sequential) {
-
         super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
                 sequential);
         setProperties(salesforceProperties);
@@ -89,7 +86,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /** Read event id to replay from specific file. */
     private static long readFromGivenFile(String filePath) {
-
         String str;
         BufferedReader bufferedReader = null;
         try {
@@ -110,7 +106,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             }
         } finally {
             try {
-                bufferedReader.close();
+                if (bufferedReader != null) {
+                    bufferedReader.close();
+                }
             } catch (IOException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.error("Unable to close resources", e);
@@ -123,7 +121,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /** Store event id to replay in the config registry DB. */
     private void updateRegistryEventID(long id) {
-
         startTenantFlow(tenantDomain);
         try {
             Registry registry = getRegistryForTenant(tenantDomain);
@@ -145,7 +142,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /** Read event id to replay from registry DB.*/
     private long getRegistryEventID() {
-
         startTenantFlow(tenantDomain);
         long eventIDFromDB;
         try {
@@ -178,21 +174,18 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /** Tenant flow start to get tenant domain. */
     private void startTenantFlow(String tenantDomain) {
-
         PrivilegedCarbonContext.startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
     }
 
     /** Get registry for the tanant. */
     private Registry getRegistryForTenant(String tenantDomain) throws RegistryException {
-
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         return registryService.getConfigSystemRegistry(tenantId);
     }
 
     /** Connecting to Salesforce and listning to events*/
     private void makeConnect() throws Throwable {
-
         Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
                 (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
@@ -232,7 +225,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param properties The mandatory parameters of Salesforce.
      */
     private void loadMandatoryParameters(Properties properties) {
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Starting to load the salesforce credentials");
         }
@@ -254,7 +246,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param properties The Optional parameters of Salesforce.
      */
     private void loadOptionalParameters(Properties properties) {
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Starting to load the salesforce credentials");
         }
@@ -329,7 +320,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param message the salesforce response status
      */
     private void injectSalesforceMessage(String message, long id) {
-
         if (injectingSeq != null) {
             if (LOG.isDebugEnabled()) {
                 LOG.info("id for the event recieved: " + id);
@@ -346,7 +336,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /** handle Exception. */
     private void handleException(String msg) {
-
         LOG.error(msg);
         throw new SynapseException(msg);
     }
@@ -354,7 +343,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     /** stop the connector when redeploy or shutdown the server. */
     @Override
     public void destroy() {
-
         if (connector != null) {
             connector.stop();
         }

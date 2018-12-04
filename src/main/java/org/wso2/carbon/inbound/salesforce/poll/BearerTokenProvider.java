@@ -21,12 +21,10 @@ public class BearerTokenProvider implements Function<Boolean, String> {
     private String bearerToken;
 
     public BearerTokenProvider(Supplier<BayeuxParameters> sessionSupplier) {
-
         this.sessionSupplier = sessionSupplier;
     }
 
     public BayeuxParameters login() throws Exception {
-
         BayeuxParameters parameters = sessionSupplier.get();
         bearerToken = parameters.bearerToken();
         return parameters;
@@ -34,7 +32,6 @@ public class BearerTokenProvider implements Function<Boolean, String> {
 
     @Override
     public String apply(Boolean reAuth) {
-
         if (reAuth) {
             try {
                 bearerToken = sessionSupplier.get().bearerToken();

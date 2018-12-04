@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-
 import org.cometd.bayeux.Channel;
 import org.cometd.bayeux.Message;
 import org.cometd.bayeux.client.ClientSession;
@@ -32,13 +31,11 @@ public class ReplayExtension extends Adapter {
     private final AtomicBoolean supported = new AtomicBoolean();
 
     public ReplayExtension(ConcurrentMap<String, Long> dataMap) {
-
         this.dataMap = dataMap;
     }
 
     @Override
     public boolean rcv(ClientSession session, Message.Mutable message) {
-
         Long replayId = getReplayId(message);
         if (this.supported.get() && replayId != null) {
             try {
@@ -52,7 +49,6 @@ public class ReplayExtension extends Adapter {
 
     @Override
     public boolean rcvMeta(ClientSession session, Message.Mutable message) {
-
         switch (message.getChannel()) {
             case Channel.META_HANDSHAKE:
                 Map<String, Object> ext = message.getExt(false);
@@ -63,7 +59,6 @@ public class ReplayExtension extends Adapter {
 
     @Override
     public boolean sendMeta(ClientSession session, Message.Mutable message) {
-
         switch (message.getChannel()) {
             case Channel.META_HANDSHAKE:
                 message.getExt(true).put(EXTENSION_NAME, Boolean.TRUE);
@@ -78,7 +73,6 @@ public class ReplayExtension extends Adapter {
     }
 
     private static Long getReplayId(Message.Mutable message) {
-
         Map<String, Object> data = message.getDataAsMap();
         @SuppressWarnings("unchecked") Optional<Long> optional = resolve(
                 () -> (Long) ((Map<String, Object>) data.get(EVENT_KEY)).get(REPLAY_ID_KEY));
@@ -86,7 +80,6 @@ public class ReplayExtension extends Adapter {
     }
 
     private static <T> Optional<T> resolve(Supplier<T> resolver) {
-
         try {
             T result = resolver.get();
             return Optional.ofNullable(result);

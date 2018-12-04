@@ -13,7 +13,7 @@ Reliable message delivery is only available in Salesforce API version 37.0 and l
 ```
 
 ## How To Use
-1. [Download the inbound endpoit jar](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project **mvn clean install** to get the jar and add it in the <ESB-Home>/dropin directory.
+1. Either [download the inbound endpoit jar](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project **mvn clean install** to get the jar and add it in the <ESB-Home>/dropin directory.
 
 2. Create a sequence to print logs as follows.
 ```

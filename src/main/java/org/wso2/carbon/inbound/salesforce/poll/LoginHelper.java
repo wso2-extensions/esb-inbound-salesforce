@@ -11,10 +11,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
@@ -66,7 +64,6 @@ public class LoginHelper {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) {
-
             switch (localName) {
                 case "sessionId":
                     reading = true;
@@ -95,27 +92,22 @@ public class LoginHelper {
             "/services/Soap/u/" + SalesforceDataHolderObject.getSoapApiVersion() + "/";
 
     public static BayeuxParameters login(String username, String password) throws Exception {
-
         return login(new URL(LOGIN_ENDPOINT), username, password);
     }
 
     public static BayeuxParameters login(String username, String password, BayeuxParameters params) throws Exception {
-
         return login(new URL(LOGIN_ENDPOINT), username, password, params);
     }
 
     public static BayeuxParameters login(URL loginEndpoint, String username, String password) throws Exception {
-
         return login(loginEndpoint, username, password, new BayeuxParameters() {
             @Override
             public String bearerToken() {
-
                 throw new IllegalStateException("Failed to authenticated");
             }
 
             @Override
             public URL endpoint() {
-
                 throw new IllegalStateException("Replay endpoint has not been established");
             }
         });
@@ -123,7 +115,6 @@ public class LoginHelper {
 
     public static BayeuxParameters login(URL loginEndpoint, String username, String password,
                                          BayeuxParameters parameters) throws Exception {
-
         HttpClient client = new HttpClient(parameters.sslContextFactory());
         try {
             client.getProxyConfiguration().getProxies().addAll(parameters.proxies());
@@ -136,6 +127,7 @@ public class LoginHelper {
             post.header("SOAPAction", "''");
             post.header("PrettyPrint", "Yes");
             ContentResponse response = post.send();
+
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
             spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
@@ -156,7 +148,6 @@ public class LoginHelper {
             return new DelegatingBayeuxParameters(parameters) {
                 @Override
                 public String bearerToken() {
-
                     return sessionId;
                 }
 
@@ -173,12 +164,10 @@ public class LoginHelper {
     }
 
     private static String getSoapUri() {
-
         return SERVICES_SOAP_PARTNER_ENDPOINT;
     }
 
     private static byte[] soapXmlForLogin(String username, String password) throws UnsupportedEncodingException {
-
         return (ENV_START + "  <urn:login>" + "    <urn:username>" + username + "</urn:username>" + "    <urn:password>"
                 + password + "</urn:password>" + "  </urn:login>" + ENV_END).getBytes("UTF-8");
     }
