@@ -87,6 +87,7 @@ public class LoginHelper {
             "<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' "
                     + "xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' "
                     + "xmlns:urn='urn:partner.soap.sforce.com'><soapenv:Body>";
+
     // The enterprise SOAP API endpoint used for the login call
     private static final String SERVICES_SOAP_PARTNER_ENDPOINT =
             "/services/Soap/u/" + SalesforceDataHolderObject.getSoapApiVersion() + "/";
