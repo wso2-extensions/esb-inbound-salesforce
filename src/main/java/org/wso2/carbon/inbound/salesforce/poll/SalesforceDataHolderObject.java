@@ -30,37 +30,58 @@ public class SalesforceDataHolderObject {
     public static String packageVersion;
     public static Properties properties;
 
-    /** set soap API version. */
+    /**
+     * set soap API version.
+     * @param soapApiVersion    version of the soap API version.
+     */
     public static void setSoapApiVersion(String soapApiVersion) {
         SalesforceDataHolderObject.soapApiVersion = soapApiVersion;
     }
 
-    /** get soap API version. */
+    /**
+     * set soap API version.
+     * @return  soap API version.
+     */
     public static String getSoapApiVersion() {
         return soapApiVersion;
     }
 
-    /** set connection timeout. */
+    /**
+     * set connection timeout.
+     * @param connectionTimeout  connection timeout.
+     */
     public static void setConnectionTimeout(int connectionTimeout) {
         SalesforceDataHolderObject.connectionTimeout = connectionTimeout;
     }
 
-    /** Set wait time to connect */
+    /**
+     * Set wait time to connect.
+     * @param waitTime  wait time.
+     */
     public static void setWaitTime(int waitTime) {
         SalesforceDataHolderObject.waitTime = waitTime;
     }
 
-    /** Set replay option. */
+    /**
+     * Set replay option.
+     * @param replayFromOption   replay option.
+     */
     public static void setReplayFromOption(long replayFromOption) {
         SalesforceDataHolderObject.replayFromOption = replayFromOption;
     }
 
-    /** Set package version of salesforce. */
+    /**
+     * Set package version of salesforce.
+     * @param packageVersion    package version of salesforce.
+     */
     public static void setPackageVersion(String packageVersion) {
         SalesforceDataHolderObject.packageVersion = packageVersion;
     }
 
-    /** set properties */
+    /**
+     * set properties.
+     * @param properties    properties.
+     */
     public static void setProperties(Properties properties) {
         SalesforceDataHolderObject.properties = properties;
     }

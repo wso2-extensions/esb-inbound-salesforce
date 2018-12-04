@@ -17,12 +17,7 @@
  */
 package org.wso2.carbon.inbound.salesforce.poll;
 
-import static org.cometd.bayeux.Channel.META_CONNECT;
-import static org.cometd.bayeux.Channel.META_DISCONNECT;
-import static org.cometd.bayeux.Channel.META_HANDSHAKE;
-import static org.cometd.bayeux.Channel.META_SUBSCRIBE;
-import static org.cometd.bayeux.Channel.META_UNSUBSCRIBE;
-import static org.wso2.carbon.inbound.salesforce.poll.SalesforceDataHolderObject.setProperties;
+import org.cometd.bayeux.Channel;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -76,7 +71,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                                 boolean sequential) {
         super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
                 sequential);
-        setProperties(salesforceProperties);
+        SalesforceDataHolderObject.setProperties(salesforceProperties);
         tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         loadMandatoryParameters(salesforceProperties);
         loadOptionalParameters(salesforceProperties);
@@ -84,7 +79,11 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         this.injectingSeq = injectingSeq;
     }
 
-    /** Read event id to replay from specific file. */
+    /**
+     * Read event id to replay from specific file.
+     * @param filePath path to text file.
+     * @return
+     */
     private static long readFromGivenFile(String filePath) {
         String str;
         BufferedReader bufferedReader = null;
@@ -119,7 +118,10 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
-    /** Store event id to replay in the config registry DB. */
+    /**
+     * Store event id to replay in the config registry DB.
+     * @param id eventID
+     */
     private void updateRegistryEventID(long id) {
         startTenantFlow(tenantDomain);
         try {
@@ -140,7 +142,10 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 
-    /** Read event id to replay from registry DB.*/
+    /**
+     * Read event id to replay from registry DB.
+     * @return event id.
+     */
     private long getRegistryEventID() {
         startTenantFlow(tenantDomain);
         long eventIDFromDB;
@@ -158,7 +163,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                     eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
                     LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");
                 }
-
             } else {
                 LOG.warn("Event id not specified in the resource in registry db. Default id used");
                 eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
@@ -172,19 +176,30 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         return SalesforceConstant.REPLAY_FROM_TIP;
     }
 
-    /** Tenant flow start to get tenant domain. */
+    /**
+     * Tenant flow start to get tenant domain.
+     * @param tenantDomain
+     */
     private void startTenantFlow(String tenantDomain) {
         PrivilegedCarbonContext.startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
     }
 
-    /** Get registry for the tanant. */
+    /**
+     * Get registry for the tanant.
+     * @param tenantDomain tenant domain name.
+     * @return
+     * @throws RegistryException
+     */
     private Registry getRegistryForTenant(String tenantDomain) throws RegistryException {
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         return registryService.getConfigSystemRegistry(tenantId);
     }
 
-    /** Connecting to Salesforce and listning to events*/
+    /**
+     * Connecting to Salesforce and listning to events
+     * @throws Throwable
+     */
     private void makeConnect() throws Throwable {
         Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
                 (Long) ((HashMap) event.
@@ -199,11 +214,13 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         BayeuxParameters params = tokenProvider.login();
         connector = new EmpConnector(params);
         LoggingListener loggingListener = new LoggingListener(true, true);
-        connector.addListener(META_HANDSHAKE, loggingListener).addListener(META_CONNECT, loggingListener)
-                .addListener(META_DISCONNECT, loggingListener).addListener(META_SUBSCRIBE, loggingListener)
-                .addListener(META_UNSUBSCRIBE, loggingListener);
+        connector.addListener(Channel.META_HANDSHAKE, loggingListener).addListener(Channel.META_CONNECT, loggingListener)
+                .addListener(Channel.META_DISCONNECT, loggingListener).addListener(Channel.META_SUBSCRIBE, loggingListener)
+                .addListener(Channel.META_UNSUBSCRIBE, loggingListener);
         connector.setBearerTokenProvider(tokenProvider);
-        if(connector.isConnected()){connector.stop();}
+        if (connector.isConnected()) {
+            connector.stop();
+        }
         connector.start().get(waitTime, TimeUnit.MILLISECONDS);
         TopicSubscription subscription;
         try {
@@ -221,7 +238,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
 
     /**
      * load essential property for salesforce inbound endpoint.
-     *
      * @param properties The mandatory parameters of Salesforce.
      */
     private void loadMandatoryParameters(Properties properties) {
@@ -301,6 +317,11 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 
+    /**
+     * Each polling time this method calls
+     *
+     * @return
+     */
     public Object poll() {
         //Establishing connection with Salesforce streaming api.
         try {
@@ -334,13 +355,19 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 
-    /** handle Exception. */
+    /**
+     * handle Exception.
+     *
+     * @param msg error message.
+     */
     private void handleException(String msg) {
         LOG.error(msg);
         throw new SynapseException(msg);
     }
 
-    /** stop the connector when redeploy or shutdown the server. */
+    /**
+     * stop the connector when redeploy or shutdown the server.
+     */
     @Override
     public void destroy() {
         if (connector != null) {
@@ -348,3 +375,4 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         }
     }
 }
+
