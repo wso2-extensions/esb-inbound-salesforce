@@ -14,9 +14,10 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 
 ## Compatibility
 
-| Inbound version  | Supported WSO2 ESB/EI version |
-| ------------- |------------- |
-| 2.0.0|  EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
+| Inbound version  | Supported Salesforce API version | Supported WSO2 ESB/EI version |
+| ------------- | ------------- | ------------- |
+| 1.0.0| 22.0  | ESB 5.00, EI 6.1.0, 6.1.1, 6.2.0, 6.3.0, 6.4.0 |
+| 2.0.0| 22.0 | EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 
 ## How to use
 1. Either [download the inbound endpoit JAR file](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project by executing the **mvn clean install** command to get the jar and by adding it in the <ESB-Home>/dropin directory.
@@ -136,10 +137,5 @@ The Event will be triggered in the ESB in real time.
 
 ## How to contribute
 
-  * Report [GitHub Issues](https://github.com/wso2-extensions/esb-inbound-salesforce/issues).
-   
-  * Send your contributions as pull requests to the [master branch](https://github.com/wso2-extensions/esb-inbound-salesforce).
-
-Also, you can create a third party connector and publish it in the WSO2 Connector Store.
-
-https://docs.wso2.com/display/ESBCONNECTORS/Creating+a+Third+Party+Connector+and+Publishing+in+WSO2+Connector+Store
+  * As an open source project, WSO2 extensions welcome contributions from the community.Check the [issue tracker](https://github.com/wso2-extensions/esb-inbound-salesforce/issues) for open issues that interest you. We look forward to receiving your contributions.
+  
