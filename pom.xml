@@ -16,14 +16,12 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 * specific language governing permissions and limitations
 * under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.synapse.inbound</groupId>
     <artifactId>org.apache.synapse.salesforce.poll.class</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <name>Salesforce Polling Consumer</name>
     <url>http://wso2.org</url>
     <packaging>bundle</packaging>
@@ -31,13 +29,20 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <!-- salesforce -->
         <dependency>
             <groupId>org.cometd.java</groupId>
-            <artifactId>bayeux-api</artifactId>
-            <version>${bayeux-api.version}</version>
+            <artifactId>cometd-java-client</artifactId>
+            <version>${cometd.java.client.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.cometd.java</groupId>
-            <artifactId>cometd-java-client</artifactId>
-            <version>${cometd-java-client.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.classic.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -50,13 +55,21 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
             <artifactId>org.wso2.carbon.inbound.endpoint</artifactId>
             <version>${carbon.mediation.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.mediation</groupId>
+            <artifactId>org.wso2.carbon.mediation.registry</artifactId>
+            <version>${org.wso2.carbon.mediation.registry.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.identity.core</artifactId>
+            <version>${org.wso2.carbon.identity.version}</version>
+        </dependency>
     </dependencies>
     <scm>
-        <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git
-        </connection>
+        <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</connection>
         <url>https://github.com/wso2-extensions/esb-inbound-salesforce.git</url>
-        <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce
-        </developerConnection>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <repositories>
@@ -129,14 +142,14 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.0</version>
                 <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
+                <version>3.0.1</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
@@ -173,6 +186,11 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <bayeux-api.version>2.3.1</bayeux-api.version>
         <cometd-java-client.version>2.3.1</cometd-java-client.version>
         <jetty-server.version>7.4.4.v20110707</jetty-server.version>
-        <carbon.mediation.version>4.4.10</carbon.mediation.version>
+        <carbon.mediation.version>4.6.106</carbon.mediation.version>
+        <cometd.java.client.version>3.1.4</cometd.java.client.version>
+        <logback.classic.version>1.1.6</logback.classic.version>
+        <junit.version>4.10</junit.version>
+        <org.wso2.carbon.mediation.registry.version>4.6.83</org.wso2.carbon.mediation.registry.version>
+        <org.wso2.carbon.identity.version>5.1.0</org.wso2.carbon.identity.version>
     </properties>
 </project>
