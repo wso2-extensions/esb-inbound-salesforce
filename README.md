@@ -38,7 +38,7 @@ Follow the steps given below to build the Salesforce EI Inbound Endpoint from th
 
 1. Get a clone or download the source from [Github](https://github.com/wso2-extensions/esb-inbound-salesforce).
 2. Run the following Maven command from the `esb-inbound-salesforce` directory: `mvn clean install`.
-3. The Salesforce connector zip file is created in the `esb-inbound-salesforce/target` directory
+3. The Salesforce inbound endpoint jar file is created in the `esb-inbound-salesforce/target` directory
 
 ## Creating a Push Topic 
 First, [create a custom object in Salesforce](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_object.htm) and then [create a Push Topic](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_a_pushtopic.htm) that contains an SOQL query.
