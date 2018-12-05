@@ -16,8 +16,9 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 
 | Inbound version  | Supported Salesforce API version | Supported WSO2 ESB/EI version |
 | ------------- | ------------- | ------------- |
-| 1.0.0| 22.0  | ESB 5.00, EI 6.1.0, 6.1.1, 6.2.0, 6.3.0, 6.4.0 |
 | 2.0.0| 22.0 | EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
+| 1.0.0| 22.0  | ESB 5.00, EI 6.1.0, 6.1.1, 6.2.0, 6.3.0, 6.4.0 |
+
 
 ## How to use
 1. Either [download the inbound endpoit JAR file](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project by executing the **mvn clean install** command to get the jar and by adding it in the <ESB-Home>/dropin directory.
