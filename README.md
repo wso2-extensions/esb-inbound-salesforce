@@ -1,4 +1,4 @@
-# Configuring a Salesforce Inbound Endpoint
+# Salesforce EI Inbound Endpoint
 
 The Salesforce streaming Inbound Endpoint allows you to perform various operations on Salesforce streaming data via WSO2 ESB.
 
@@ -12,6 +12,12 @@ The Salesforce streaming Inbound Endpoint allows you to perform various operatio
 Reliable message delivery is only available from the Salesforce API version 37.0 and above.
 ```
 
+## Compatibility
+
+| Inbound version  | Supported WSO2 ESB/EI version |
+| ------------- |------------- |
+| 2.0.0|  EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
+
 ## How to use
 1. Either [download the inbound endpoit JAR file](https://store.wso2.com/store/assets/esbconnector/details/fbb433b5-4d74-4064-84c2-e4b23c531aa2) or build the project by executing the **mvn clean install** command to get the jar and by adding it in the <ESB-Home>/dropin directory.
 
@@ -23,6 +29,14 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 </sequence>
 ```
 3. Create a Push Topic and then retrieve information or configure a Platform Event.
+
+## Building From the Source
+
+Follow the steps given below to build the Salesforce EI Inbound Endpoint from the source code:
+
+1. Get a clone or download the source from [Github](https://github.com/wso2-extensions/esb-inbound-salesforce).
+2. Run the following Maven command from the `esb-inbound-salesforce` directory: `mvn clean install`.
+3. The Salesforce connector zip file is created in the `esb-inbound-salesforce/target` directory
 
 ## Creating a Push Topic 
 First, [create a custom object in Salesforce](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_object.htm) and then [create a Push Topic](https://developer.salesforce.com/docs/atlas.en-us.202.0.api_streaming.meta/api_streaming/create_a_pushtopic.htm) that contains an SOQL query.
