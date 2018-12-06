@@ -183,6 +183,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         </repository>
     </distributionManagement>
     <properties>
+        <project.scm.id>my-scm-server</project.scm.id>
         <bayeux-api.version>2.3.1</bayeux-api.version>
         <cometd-java-client.version>2.3.1</cometd-java-client.version>
         <jetty-server.version>7.4.4.v20110707</jetty-server.version>
