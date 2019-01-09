@@ -55,5 +55,4 @@ public class LogginListnerTest extends PowerMockTestCase {
         loggingListener.onMessage(clientSessionChannel, message);
 
     }
-
 }
