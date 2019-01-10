@@ -64,6 +64,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     private boolean isPolled = false;
     private String tenantDomain;
     private final RegistryService registryService = IdentityTenantUtil.getRegistryService();
+    private SalesforceDataHolderObject SalesforceDataHolderObject=new SalesforceDataHolderObject();
     private EmpConnector connector;
 
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
@@ -84,7 +85,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param filePath path to text file.
      * @return
      */
-    private static long readFromGivenFile(String filePath) {
+    private long readFromGivenFile(String filePath) {
         String str;
         BufferedReader bufferedReader = null;
         try {
@@ -129,11 +130,12 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)) {
                 registry.beginTransaction();
                 Resource resource = registry.get(SalesforceConstant.RESOURCE_PATH);
-                resource.setProperty(SalesforceConstant.PROPERTY_NAME, "" + id);
+                resource.setProperty(SalesforceDataHolderObject.salesforceObject, "" + id);
                 registry.put(SalesforceConstant.RESOURCE_PATH, resource);
                 registry.commitTransaction();
             } else {
-                LOG.warn("Resource not exists.Please create resource");
+                LOG.warn("Resource "+SalesforceDataHolderObject.salesforceObject+
+                    " not exists.Please create resource");
             }
         } catch (RegistryException e) {
             LOG.error("Unable to read resource eventID from " + SalesforceConstant.RESOURCE_PATH);
@@ -153,12 +155,12 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             Registry registry = getRegistryForTenant(tenantDomain);
             if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)
                     && registry.get(SalesforceConstant.RESOURCE_PATH) != null
-                    && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME)
+                    && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject)
                     != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
-                    .getProperty(SalesforceConstant.PROPERTY_NAME).isEmpty()) {
+                    .getProperty(SalesforceDataHolderObject.salesforceObject).isEmpty()) {
                 try {
                     eventIDFromDB = Long.parseLong(
-                            registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceConstant.PROPERTY_NAME));
+                            registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject));
                 } catch (NumberFormatException e) {
                     eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
                     LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");
@@ -204,7 +206,8 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
                 (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
-        BearerTokenProvider tokenProvider = new BearerTokenProvider(() -> {
+        BearerTokenProvider tokenProvider;
+        tokenProvider = new BearerTokenProvider(() -> {
             try {
                 return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
             } catch (Exception e) {
@@ -254,6 +257,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             handleException("Mandatory Parameters can't be Empty...");
         }
         SalesforceDataHolderObject.setPackageVersion(packageVersion);
+        SalesforceDataHolderObject.setObjectName(salesforceObject);
     }
 
     /**
