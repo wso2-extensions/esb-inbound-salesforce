@@ -134,7 +134,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
                 registry.put(SalesforceConstant.RESOURCE_PATH, resource);
                 registry.commitTransaction();
             } else {
-                LOG.warn("Resource "+SalesforceDataHolderObject.salesforceObject+
+                LOG.warn("Resource " + SalesforceDataHolderObject.salesforceObject +
                     " not exists.Please create resource");
             }
         } catch (RegistryException e) {
@@ -154,13 +154,14 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         try {
             Registry registry = getRegistryForTenant(tenantDomain);
             if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)
-                    && registry.get(SalesforceConstant.RESOURCE_PATH) != null
-                    && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject)
-                    != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
-                    .getProperty(SalesforceDataHolderObject.salesforceObject).isEmpty()) {
+                && registry.get(SalesforceConstant.RESOURCE_PATH) != null
+                && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject)
+                != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
+                .getProperty(SalesforceDataHolderObject.salesforceObject).isEmpty()) {
                 try {
                     eventIDFromDB = Long.parseLong(
-                            registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject));
+                        registry.get(SalesforceConstant.RESOURCE_PATH)
+                            .getProperty(SalesforceDataHolderObject.salesforceObject));
                 } catch (NumberFormatException e) {
                     eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
                     LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");

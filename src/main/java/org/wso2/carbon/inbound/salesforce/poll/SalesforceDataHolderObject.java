@@ -29,7 +29,7 @@ public class SalesforceDataHolderObject {
     public static String soapApiVersion;
     public static String packageVersion;
     public Properties properties;
-    public  String salesforceObject;
+    public String salesforceObject;
 
     /**
      * set soap API version.
@@ -88,7 +88,7 @@ public class SalesforceDataHolderObject {
     }
 
     public void setObjectName(String salesforceObject) {
-        String processString=salesforceObject.trim();
-            this.salesforceObject=processString.substring(7);
+        String processString = salesforceObject.trim();
+        this.salesforceObject = processString.substring(7);
     }
 }
