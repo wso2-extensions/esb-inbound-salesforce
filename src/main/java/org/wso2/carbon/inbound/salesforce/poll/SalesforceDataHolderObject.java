@@ -24,18 +24,19 @@ import java.util.Properties;
 public class SalesforceDataHolderObject {
 
     public static int connectionTimeout;
-    public static int waitTime;
-    public static long replayFromOption;
+    public int waitTime;
+    public long replayFromOption;
     public static String soapApiVersion;
     public static String packageVersion;
-    public static Properties properties;
+    public Properties properties;
+    public String salesforceObject;
 
     /**
      * set soap API version.
      * @param soapApiVersion    version of the soap API version.
      */
-    public static void setSoapApiVersion(String soapApiVersion) {
-        SalesforceDataHolderObject.soapApiVersion = soapApiVersion;
+    public void setSoapApiVersion(String soapApiVersion) {
+        this.soapApiVersion = soapApiVersion;
     }
 
     /**
@@ -50,39 +51,44 @@ public class SalesforceDataHolderObject {
      * set connection timeout.
      * @param connectionTimeout  connection timeout.
      */
-    public static void setConnectionTimeout(int connectionTimeout) {
-        SalesforceDataHolderObject.connectionTimeout = connectionTimeout;
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
     }
 
     /**
      * Set wait time to connect.
      * @param waitTime  wait time.
      */
-    public static void setWaitTime(int waitTime) {
-        SalesforceDataHolderObject.waitTime = waitTime;
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
     }
 
     /**
      * Set replay option.
      * @param replayFromOption   replay option.
      */
-    public static void setReplayFromOption(long replayFromOption) {
-        SalesforceDataHolderObject.replayFromOption = replayFromOption;
+    public void setReplayFromOption(long replayFromOption) {
+        this.replayFromOption = replayFromOption;
     }
 
     /**
      * Set package version of salesforce.
      * @param packageVersion    package version of salesforce.
      */
-    public static void setPackageVersion(String packageVersion) {
-        SalesforceDataHolderObject.packageVersion = packageVersion;
+    public void setPackageVersion(String packageVersion) {
+        this.packageVersion = packageVersion;
     }
 
     /**
      * set properties.
      * @param properties    properties.
      */
-    public static void setProperties(Properties properties) {
-        SalesforceDataHolderObject.properties = properties;
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
+    public void setObjectName(String salesforceObject) {
+        String processString = salesforceObject.trim();
+        this.salesforceObject = processString.substring(7);
     }
 }

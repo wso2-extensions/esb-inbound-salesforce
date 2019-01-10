@@ -16,6 +16,7 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 
 | Inbound version  | Supported Salesforce API version | Supported WSO2 ESB/EI version |
 | ------------- | ------------- | ------------- |
+| 2.0.1| 22.0 | EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 | 2.0.0| 22.0 | EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 | 1.0.0| 22.0  | ESB 5.00, EI 6.1.0, 6.1.1, 6.2.0, 6.3.0, 6.4.0 |
 
@@ -28,6 +29,7 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="test" onError="fault" xmlns="http://ws.apache.org/ns/synapse">
     <log level="full"/>
+    <drop/>
 </sequence>
 ```
 3. Create a Push Topic and then retrieve information or configure a Platform Event.
@@ -91,10 +93,11 @@ Now, that you have configured the Salesforce streaming Inbound Endpoint, use the
 ```
 * connection.salesforce.replay: replay **enable** or **disable**. Enabling this will read the event ID stored in the Registry DB or from the text file stored in the local machine.
 * connection.salesforce.EventIDStoredFilePath:
-    - when replay is enabled, do not define any value for this property (i.e., keep it blank), to replay from the last event ID stored in the Registry DB (property-“eventID” resource path:connector/salesforce/event).
+    - when replay is enabled, do not define any value for this property (i.e., keep it blank), to replay from the last event ID stored in the config Registry DB (property- name of the salesforce object(Follow bellow example) resource path:connector/salesforce/event).
     - when replay is enabled, specify the directory path of a text file to start replaying from the event ID stored in it. 
     ```
-    In case of a failure, the default value will be used to retrieve IDs from current events. Create the “eventID” property in the Registry DB in the connector/salesforce/event resource path . 
+    Ex: Salesforce object is /topic/reading__e then property name is "reading__e".
+    In case of a failure, the default value will be used to retrieve IDs from current events. Create the property for each platform event and each pushtopic in the config Registry DB in the connector/salesforce/event resource path.
     ```
 * connection.salesforce.packageVersion: The version of the Salesforce API.
 * connection.salesforce.salesforceObject : The name of the Push Topic or the Platform Event that is added to the Salesforce account.
@@ -135,6 +138,10 @@ if (sr.isSuccess()) {
 ```
 Click **Execute**.
 The Event will be triggered in the ESB in real time.
+
+```
+To subscribe to multiple platform events or push topics add the separate inbound endpoit with corresponding sequences for push topics and platform events. Make sure to create resource in the config registry DB to for each object to store event id when replay option need to use.
+```
 
 ## How to contribute
 
