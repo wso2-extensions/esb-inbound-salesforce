@@ -18,6 +18,8 @@
 package org.wso2.carbon.inbound.salesforce.poll;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -33,7 +35,6 @@ import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
-import java.io.IOException;
 import java.io.InputStream;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.spy;
@@ -52,6 +53,7 @@ public class SalesforceStreamDataTest extends PowerMockTestCase {
 
     private SalesforceStreamData salesforceStreamData;
     private SynapseEnvironment synapseEnvironment;
+    private final Log LOG = LogFactory.getLog(SalesforceStreamDataTest.class);
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
@@ -139,8 +141,8 @@ public class SalesforceStreamDataTest extends PowerMockTestCase {
             prop.setProperty("connection.salesforce.loginEndpoint", properties.getProperty("loginEndpoint"));
             prop.setProperty("connection.salesforce.password", properties.getProperty("password"));
             input.close();
-        } catch (IOException e) {
-            System.out.println("Properties reading failed  :" + e.getMessage());
+        } catch (Exception e) {
+            LOG.error("Properties reading failed  :", e);
         }
     }
 }
