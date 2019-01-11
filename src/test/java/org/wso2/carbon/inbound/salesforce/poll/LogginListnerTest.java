@@ -53,6 +53,5 @@ public class LogginListnerTest extends PowerMockTestCase {
     public void testOnMessage() throws Exception {
         loggingListener = new LoggingListener(true, true);
         loggingListener.onMessage(clientSessionChannel, message);
-
     }
 }

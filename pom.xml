@@ -316,6 +316,6 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <jacoco.version>0.7.9</jacoco.version>
         <powermock.version>1.6.5</powermock.version>
         <slf4j.api.version>1.7.12</slf4j.api.version>
-        <skip-tests>false</skip-tests>
+        <skip-tests>true</skip-tests>
     </properties>
 </project>

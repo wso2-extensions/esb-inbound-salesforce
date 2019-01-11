@@ -32,18 +32,15 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({BearerTokenProvider.class, SalesforceStreamData.class})
 public class BearerTokenProviderTest extends PowerMockTestCase {
-    private BearerTokenProvider bearerTokenProvider;
 
     private DelegatingBayeuxParameters delegatingBayeuxParameters;
 
     @Mock
     private BayeuxParameters bayeuxParameters;
-
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
