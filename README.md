@@ -148,7 +148,6 @@ To subscribe to multiple platform events or push topics add the separate inbound
 2. Set properties in src/test/resources/Property.properties.
 3. Run "mvn test -Dskip-tests=false".
 
-
 ## How to contribute
 
   * As an open source project, WSO2 extensions welcome contributions from the community.Check the [issue tracker](https://github.com/wso2-extensions/esb-inbound-salesforce/issues) for open issues that interest you. We look forward to receiving your contributions.
