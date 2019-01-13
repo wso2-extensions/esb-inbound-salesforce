@@ -143,6 +143,12 @@ The Event will be triggered in the ESB in real time.
 To subscribe to multiple platform events or push topics add the separate inbound endpoit with corresponding sequences for push topics and platform events. Make sure to create resource in the config registry DB to for each object to store event id when replay option need to use.
 ```
 
+## Run tests
+1. Create pushtopic or platform event.
+2. Set properties in src/test/resources/Property.properties.
+3. Run "mvn test -Dskip-tests=false".
+
+
 ## How to contribute
 
   * As an open source project, WSO2 extensions welcome contributions from the community.Check the [issue tracker](https://github.com/wso2-extensions/esb-inbound-salesforce/issues) for open issues that interest you. We look forward to receiving your contributions.
