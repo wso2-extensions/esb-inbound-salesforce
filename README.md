@@ -93,10 +93,10 @@ Now, that you have configured the Salesforce streaming Inbound Endpoint, use the
 ```
 * connection.salesforce.replay: replay **enable** or **disable**. Enabling this will read the event ID stored in the Registry DB or from the text file stored in the local machine.
 * connection.salesforce.EventIDStoredFilePath:
-    - when replay is enabled, do not define any value for this property (i.e., keep it blank), to replay from the last event ID stored in the config Registry DB (property- name of the salesforce object(Follow bellow example) resource path:connector/salesforce/event).
+    - when replay is enabled, do not define any value for this property (i.e., keep it blank), to replay from the last event ID stored in the config Registry DB (property- name of the Salesforce object (follow the example below for more understanding) resource path - connector/salesforce/event).
     - when replay is enabled, specify the directory path of a text file to start replaying from the event ID stored in it. 
     ```
-    Ex: Salesforce object is /topic/reading__e then property name is "reading__e".
+    E.g., if the Salesforce object is `/topic/reading__e`, the property name is `reading__e`.
     In case of a failure, the default value will be used to retrieve IDs from current events. Create the property for each platform event and each pushtopic in the config Registry DB in the connector/salesforce/event resource path.
     ```
 * connection.salesforce.packageVersion: The version of the Salesforce API.
@@ -140,7 +140,7 @@ Click **Execute**.
 The Event will be triggered in the ESB in real time.
 
 ```
-To subscribe to multiple platform events or push topics add the separate inbound endpoit with corresponding sequences for push topics and platform events. Make sure to create resource in the config registry DB to for each object to store event id when replay option need to use.
+To subscribe to multiple platform events or push topics, add the separate inbound endpoint to the corresponding sequences for push topics and platform events. Make sure to create a resource in the config registry DB for each object to store the event ID when you need to use the replay option.
 ```
 
 ## Run tests
