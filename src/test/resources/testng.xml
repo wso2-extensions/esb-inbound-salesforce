@@ -18,7 +18,7 @@
   -->
 
 <suite name="Suite1" verbose="1" >
-    <test name="Nuxeo-Authenticator-Unit-Tests">
+    <test name="Salesforce-Inboud-Endpoint-Unit-Tests">
         <classes>
             <class name="org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamDataTest"/>
             <class name="org.wso2.carbon.inbound.salesforce.poll.LogginListnerTest"/>
