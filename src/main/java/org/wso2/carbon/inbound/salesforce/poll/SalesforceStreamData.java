@@ -17,6 +17,8 @@
  */
 package org.wso2.carbon.inbound.salesforce.poll;
 
+import org.apache.synapse.config.Entry;
+import org.apache.synapse.registry.AbstractRegistry;
 import org.cometd.bayeux.Channel;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -36,13 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.eclipse.jetty.util.ajax.JSON;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericPollingConsumer;
-import org.wso2.carbon.registry.core.exceptions.RegistryException;
-import org.wso2.carbon.registry.core.Registry;
-import org.wso2.carbon.registry.core.Resource;
-import org.wso2.carbon.registry.core.service.RegistryService;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 
 /**
  * Salesforce streaming api Inbound.
@@ -62,10 +58,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     private int connectionTimeout;
     private int waitTime;
     private boolean isPolled = false;
-    private String tenantDomain;
-    private final RegistryService registryService = IdentityTenantUtil.getRegistryService();
     private SalesforceDataHolderObject SalesforceDataHolderObject=new SalesforceDataHolderObject();
     private EmpConnector connector;
+    private AbstractRegistry registry;
 
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
@@ -73,7 +68,6 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
                 sequential);
         SalesforceDataHolderObject.setProperties(salesforceProperties);
-        tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         loadMandatoryParameters(salesforceProperties);
         loadOptionalParameters(salesforceProperties);
         streamingEndpointUri = loginEndpoint;
@@ -124,23 +118,16 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @param id eventID
      */
     private void updateRegistryEventID(long id) {
-        startTenantFlow(tenantDomain);
-        try {
-            Registry registry = getRegistryForTenant(tenantDomain);
-            if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)) {
-                registry.beginTransaction();
-                Resource resource = registry.get(SalesforceConstant.RESOURCE_PATH);
-                resource.setProperty(SalesforceDataHolderObject.salesforceObject, "" + id);
-                registry.put(SalesforceConstant.RESOURCE_PATH, resource);
-                registry.commitTransaction();
+        if (registry != null) {
+            Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
+            if (registryResource != null) {
+                registry.newNonEmptyResource(SalesforceConstant.RESOURCE_PATH, false, "text/plain", "" + id,
+                        SalesforceDataHolderObject.salesforceObject);
+
             } else {
                 LOG.warn("Resource " + SalesforceDataHolderObject.salesforceObject +
-                    " not exists.Please create resource");
+                        " not exists.Please create resource");
             }
-        } catch (RegistryException e) {
-            LOG.error("Unable to read resource eventID from " + SalesforceConstant.RESOURCE_PATH);
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
@@ -149,56 +136,28 @@ public class SalesforceStreamData extends GenericPollingConsumer {
      * @return event id.
      */
     private long getRegistryEventID() {
-        startTenantFlow(tenantDomain);
         long eventIDFromDB;
-        try {
-            Registry registry = getRegistryForTenant(tenantDomain);
-            if (registry.resourceExists(SalesforceConstant.RESOURCE_PATH)
-                && registry.get(SalesforceConstant.RESOURCE_PATH) != null
-                && registry.get(SalesforceConstant.RESOURCE_PATH).getProperty(SalesforceDataHolderObject.salesforceObject)
-                != null && !registry.get(SalesforceConstant.RESOURCE_PATH)
-                .getProperty(SalesforceDataHolderObject.salesforceObject).isEmpty()) {
-                try {
-                    eventIDFromDB = Long.parseLong(
-                        registry.get(SalesforceConstant.RESOURCE_PATH)
-                            .getProperty(SalesforceDataHolderObject.salesforceObject));
-                } catch (NumberFormatException e) {
-                    eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
-                    LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");
-                }
-            } else {
-                LOG.warn("Event id not specified in the resource in registry db. Default id used");
-                eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
+        registry = (AbstractRegistry) synapseEnvironment.getSynapseConfiguration().getRegistry();
+        Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
+        if (registryResource != null) {
+            Properties resourceProperties = registry.getResourceProperties(SalesforceConstant.RESOURCE_PATH);
+            if (resourceProperties == null) {
+                return SalesforceConstant.REPLAY_FROM_TIP;
             }
-            return eventIDFromDB;
-        } catch (RegistryException e) {
-            LOG.error("Unable to get the property eventID from the resource " + SalesforceConstant.RESOURCE_PATH, e);
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
+            String eventIDStr = resourceProperties.getProperty(SalesforceDataHolderObject.salesforceObject);
+            try {
+                eventIDFromDB = Long.parseLong(eventIDStr);
+            } catch (NumberFormatException e) {
+                eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
+                LOG.warn("Event id mentioned in the registry property is not a number. Default id used to retrieve events");
+            }
+        } else {
+            LOG.warn("Event id not specified in the resource in registry db. Default id used");
+            eventIDFromDB = SalesforceConstant.REPLAY_FROM_TIP;
         }
-        return SalesforceConstant.REPLAY_FROM_TIP;
+        return eventIDFromDB;
     }
-
-    /**
-     * Tenant flow start to get tenant domain.
-     * @param tenantDomain
-     */
-    private void startTenantFlow(String tenantDomain) {
-        PrivilegedCarbonContext.startTenantFlow();
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
-    }
-
-    /**
-     * Get registry for the tanant.
-     * @param tenantDomain tenant domain name.
-     * @return
-     * @throws RegistryException
-     */
-    private Registry getRegistryForTenant(String tenantDomain) throws RegistryException {
-        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        return registryService.getConfigSystemRegistry(tenantId);
-    }
-
+    
     /**
      * Connecting to Salesforce and listning to events
      * @throws Throwable
