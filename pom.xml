@@ -25,7 +25,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     </parent>
     <groupId>org.apache.synapse.inbound.salesforce</groupId>
     <artifactId>org.apache.synapse.salesforce.poll.class</artifactId>
-    <version>2.0.4-SNAPSHOT</version>
+    <version>2.0.5-SNAPSHOT</version>
     <name>Salesforce Polling Consumer</name>
     <url>http://wso2.org</url>
     <packaging>bundle</packaging>
@@ -305,7 +305,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <cometd-java-client.version>2.3.1</cometd-java-client.version>
         <jetty-server.version>7.4.4.v20110707</jetty-server.version>
         <carbon.mediation.version>4.6.106</carbon.mediation.version>
-        <cometd.java.client.version>3.1.4</cometd.java.client.version>
+        <cometd.java.client.version>4.0.4</cometd.java.client.version>
         <logback.classic.version>1.1.6</logback.classic.version>
         <junit.version>4.10</junit.version>
         <org.wso2.carbon.mediation.registry.version>4.6.83</org.wso2.carbon.mediation.registry.version>
