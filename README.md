@@ -16,6 +16,8 @@ Reliable message delivery is only available from the Salesforce API version 37.0
 
 | Inbound version  | Supported Salesforce API version | Supported WSO2 ESB/EI version |
 | ------------- | ------------- | ------------- |
+| 2.0.5| 22.0 | EI 7.1.0, EI 7.0.x, EI 6.6.0, EI 6.5.0, EI 6.1.0, 6.2.0, 6.3.0, 6.4.0, MI 4.x.x |
+| 2.0.4| 22.0 | EI 7.1.0, EI 7.0.x, EI 6.6.0, EI 6.5.0, EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 | 2.0.1| 22.0 | EI 7.1.0, EI 7.0.x, EI 6.6.0, EI 6.5.0, EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 | 2.0.0| 22.0 | EI 6.1.0, 6.2.0, 6.3.0, 6.4.0 |
 | 1.0.0| 22.0  | ESB 5.00, EI 6.1.0, 6.1.1, 6.2.0, 6.3.0, 6.4.0 |
