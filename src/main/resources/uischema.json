@@ -1,0 +1,233 @@
+{
+  "id": "org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamData",
+  "name": "salesforceInbound",
+  "type": "inbound-connector",
+  "title": "Salesforce Inbound Connector",
+  "help": "Configure the Salesforce inbound connector settings for polling and accessing Salesforce objects.",
+  "elements": [
+    {
+      "type": "attributeGroup",
+      "value": {
+        "groupName": "Generic",
+        "elements": [
+          {
+            "type": "attribute",
+            "value": {
+              "name": "name",
+              "displayName": "Inbound Endpoint Name",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Unique identifier for the Salesforce inbound endpoint."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "class",
+              "displayName": "Class Name",
+              "inputType": "string",
+              "required": "true",
+              "hidden": true,
+              "defaultValue": "org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamData"
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "sequence",
+              "displayName": "Injecting Sequence Name",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Sequence to inject the Salesforce message"
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "onError",
+              "displayName": "Error Sequence Name",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Error sequence to invoke on fault"
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "suspend",
+              "displayName": "Suspend Inbound",
+              "inputType": "checkbox",
+              "defaultValue": false,
+              "hidden": true,
+              "required": "false",
+              "helpTip": "Suspend Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "attributeGroup",
+      "value": {
+        "groupName": "Inbound Functional",
+        "elements": [
+          {
+            "type": "attribute",
+            "value": {
+              "name": "interval",
+              "displayName": "Polling interval",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "The polling interval for the Salesforce inbound endpoint."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "sequential",
+              "displayName": "Execute sequentially",
+              "inputType": "checkbox",
+              "defaultValue": true,
+              "required": "false",
+              "helpTip": "The behaviour when executing the given sequence."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "coordination",
+              "displayName": "Coordination",
+              "inputType": "checkbox",
+              "defaultValue": true,
+              "required": "false",
+              "helpTip": "In a clustered setup, this will run the inbound only in a single worker node."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "attributeGroup",
+      "value": {
+        "groupName": "Salesforce Basic",
+        "elements": [
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.salesforceObject",
+              "displayName": "Salesforce Object",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Name of the Salesforce object to interact with."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.packageVersion",
+              "displayName": "Package Version",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Version of the Salesforce package."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.userName",
+              "displayName": "User Name",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Salesforce login user name."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.password",
+              "displayName": "Password",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "Salesforce login password."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.loginEndpoint",
+              "displayName": "Login Endpoint",
+              "inputType": "string",
+              "defaultValue": "https://login.salesforce.com",
+              "required": "true",
+              "helpTip": "Salesforce login URL endpoint."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "attributeGroup",
+      "value": {
+        "groupName": "Salesforce Optional",
+        "isCollapsed": true,
+        "elements": [
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.soapApiVersion",
+              "displayName": "SOAP API Version",
+              "inputType": "string",
+              "defaultValue": "22.0",
+              "required": "false",
+              "helpTip": "Version of the Salesforce SOAP API to use."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.connectionTimeout",
+              "displayName": "Connection Timeout",
+              "inputType": "string",
+              "defaultValue": "10000",
+              "required": "false",
+              "helpTip": "Connection timeout in milliseconds."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.waitTime",
+              "displayName": "Wait Time",
+              "inputType": "string",
+              "defaultValue": "86400000",
+              "required": "false",
+              "helpTip": "Wait time in milliseconds before making a new request in case of server delays."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.replay",
+              "displayName": "Replay",
+              "inputType": "boolean",
+              "defaultValue": false,
+              "required": "false",
+              "helpTip": "Enabling this will read the event ID stored in the Registry or from the text file provided via Event ID File Path parameter."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.EventIDStoredFilePath",
+              "displayName": "Event ID File Path",
+              "inputType": "string",
+              "required": "false",
+              "helpTip": "Specify the file path of a text file to start replaying from the event ID stored in it.",
+              "enableCondition": [{"connection.salesforce.replay":"true"}]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
