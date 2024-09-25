@@ -25,7 +25,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     </parent>
     <groupId>org.apache.synapse.inbound.salesforce</groupId>
     <artifactId>org.apache.synapse.salesforce.poll.class</artifactId>
-    <version>2.0.10-SNAPSHOT</version>
+    <version>2.0.10</version>
     <name>Salesforce Polling Consumer</name>
     <url>http://wso2.org</url>
     <packaging>bundle</packaging>
@@ -138,7 +138,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</connection>
         <url>https://github.com/wso2-extensions/esb-inbound-salesforce.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v2.0.10</tag>
     </scm>
     <repositories>
         <repository>
