@@ -209,7 +209,7 @@
             "value": {
               "name": "connection.salesforce.replay",
               "displayName": "Replay",
-              "inputType": "boolean",
+              "inputType": "checkbox",
               "defaultValue": false,
               "required": "false",
               "helpTip": "Enabling this will read the event ID stored in the Registry or from the text file provided via Event ID File Path parameter."
@@ -223,7 +223,7 @@
               "inputType": "string",
               "required": "false",
               "helpTip": "Specify the file path of a text file to start replaying from the event ID stored in it.",
-              "enableCondition": [{"connection.salesforce.replay":"true"}]
+              "enableCondition": [{"connection.salesforce.replay":true}]
             }
           }
         ]
