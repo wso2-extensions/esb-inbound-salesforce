@@ -1,13 +1,14 @@
 {
     "name": "Salesforce (Inbound)",
     "owner": "WSO2",
-    "category": "Inbound Endpoint",
+    "category": "Customer Relationship Management",
     "documentationUrl": "https://github.com/wso2-extensions/esb-connector-salesforce/blob/release-2.1.1/README.md",
     "description": "The Salesforce streaming Inbound Endpoint allows you to perform various operations such as push topics and platform events on Salesforce streaming data via WSO2 EI.",
     "status": "Active",
     "labels": [
         "CRM",
-        "salesforce"
+        "salesforce",
+        "inbound-endpoint"
     ],
     "releases": [
         {
