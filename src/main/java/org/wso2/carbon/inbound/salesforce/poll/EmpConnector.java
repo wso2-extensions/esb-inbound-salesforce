@@ -117,11 +117,15 @@ public class EmpConnector {
     private Function<Boolean, String> bearerTokenProvider;
     private AtomicBoolean reauthenticate = new AtomicBoolean(false);
 
-    public EmpConnector(BayeuxParameters parameters) {
+    // A reference to the ConnectionFailureListener to notify upon connection failure
+    private ConnectionFailureListener failureListener;
+
+    public EmpConnector(BayeuxParameters parameters, ConnectionFailureListener listener) {
         this.parameters = parameters;
         httpClient = new HttpClient(parameters.sslContextFactory());
         httpClient.getProxyConfiguration().getProxies().addAll(parameters.proxies());
         httpClient.setConnectTimeout(SalesforceDataHolderObject.connectionTimeout);
+        failureListener = listener;
     }
 
     /**
@@ -320,7 +324,14 @@ public class EmpConnector {
             if (!message.isSuccessful()) {
                 if (isError(message, ERROR_401) || isError(message, ERROR_403)) {
                     reauthenticate.set(true);
-                    reconnect();
+                    try {
+                        reconnect();
+                    } catch (Exception e) {
+                        LOG.warn("Failed to reconnect ", e);
+                        if (failureListener != null) {
+                            failureListener.onConnectionFailure();
+                        }
+                    }
                 }
             }
         }

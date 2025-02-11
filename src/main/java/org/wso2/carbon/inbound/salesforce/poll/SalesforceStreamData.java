@@ -43,7 +43,7 @@ import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericPollingConsumer;
 /**
  * Salesforce streaming api Inbound.
  */
-public class SalesforceStreamData extends GenericPollingConsumer {
+public class SalesforceStreamData extends GenericPollingConsumer implements ConnectionFailureListener {
 
     private static final Log LOG = LogFactory.getLog(SalesforceStreamData.class);
     // Mandatory parameters.
@@ -62,6 +62,9 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     private EmpConnector connector;
     private AbstractRegistry registry;
 
+    // Flag indicating whether the connection has failed
+    private boolean connectionFailed;
+
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
                                 boolean sequential) {
@@ -72,7 +75,20 @@ public class SalesforceStreamData extends GenericPollingConsumer {
         loadOptionalParameters(salesforceProperties);
         streamingEndpointUri = loginEndpoint;
         this.injectingSeq = injectingSeq;
+        this.connectionFailed = false;
     }
+
+    /**
+     * Handles connection failure notifications from the EmpConnector.
+     * Sets the connectionFailed flag to true when a failure is detected.
+     */
+    @Override
+    public void onConnectionFailure() {
+        // Update the connection failed flag and log the failure
+        this.connectionFailed = true;
+        LOG.info("Connection failed. connectionFailed flag set to true in SalesforceStreamData.");
+    }
+
 
     /**
      * Read event id to replay from specific file.
@@ -175,7 +191,7 @@ public class SalesforceStreamData extends GenericPollingConsumer {
             }
         });
         BayeuxParameters params = tokenProvider.login();
-        connector = new EmpConnector(params);
+        connector = new EmpConnector(params, this);
         LoggingListener loggingListener = new LoggingListener(true, true);
         connector.addListener(Channel.META_HANDSHAKE, loggingListener).addListener(Channel.META_CONNECT, loggingListener)
                 .addListener(Channel.META_DISCONNECT, loggingListener).addListener(Channel.META_SUBSCRIBE, loggingListener)
@@ -289,9 +305,10 @@ public class SalesforceStreamData extends GenericPollingConsumer {
     public Object poll() {
         //Establishing connection with Salesforce streaming api.
         try {
-            if (!isPolled) {
+            if (!isPolled || connectionFailed) {
                 makeConnect();
                 isPolled = true;
+                connectionFailed = false;
             }
         } catch (Throwable e) {
             LOG.error("Error while setup the Salesforce connection.", e);
