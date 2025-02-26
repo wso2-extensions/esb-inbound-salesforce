@@ -23,8 +23,8 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <artifactId>wso2</artifactId>
         <version>1</version>
     </parent>
-    <groupId>org.apache.synapse.inbound.salesforce</groupId>
-    <artifactId>org.apache.synapse.salesforce.poll.class</artifactId>
+    <groupId>org.wso2.integration.inbound</groupId>
+    <artifactId>mi-inbound-salesforce</artifactId>
     <version>2.0.18-SNAPSHOT</version>
     <name>Salesforce Polling Consumer</name>
     <url>http://wso2.org</url>
@@ -143,11 +143,11 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     <repositories>
         <repository>
             <id>wso2-maven2-repository</id>
-            <url>http://dist.wso2.org/maven2</url>
+            <url>https://dist.wso2.org/maven2</url>
         </repository>
         <repository>
             <id>central</id>
-            <url>http://repo1.maven.org/maven2/</url>
+            <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>atlassian-contrib</id>
@@ -193,7 +193,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <repository>
             <id>wso2</id>
             <name>WSO2 internal Repository</name>
-            <url>http://dist.wso2.org/maven2/</url>
+            <url>https://dist.wso2.org/maven2/</url>
             <releases>
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
@@ -227,6 +227,13 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     </distributionManagement>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
