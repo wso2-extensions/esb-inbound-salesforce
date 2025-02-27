@@ -18,16 +18,16 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <groupId>org.wso2.integration.inbound</groupId>
+    <artifactId>mi-inbound-salesforce</artifactId>
+    <version>2.0.18-SNAPSHOT</version>
+    <name>Salesforce Polling Consumer</name>
+    <url>http://wso2.org</url>
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
         <version>1</version>
     </parent>
-    <groupId>org.wso2.integration.inbound</groupId>
-    <artifactId>mi-inbound-salesforce</artifactId>
-    <version>2.0.20-SNAPSHOT</version>
-    <name>Salesforce Polling Consumer</name>
-    <url>http://wso2.org</url>
     <packaging>bundle</packaging>
     <dependencies>
         <!-- salesforce -->
