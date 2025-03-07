@@ -355,5 +355,10 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
             connector.stop();
         }
     }
+
+    @Override
+    public void resume() {
+        isPolled = false;
+    }
 }
 

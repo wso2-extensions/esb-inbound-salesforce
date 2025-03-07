@@ -153,18 +153,30 @@ public class EmpConnector {
             return;
         }
         if (client != null) {
-            LOG.info("Disconnecting Bayeux Client in EmpConnector");
-            client.disconnect();
+            LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
+
+            // Unsubscribe from all active subscriptions
+            subscriptions.forEach(SubscriptionImpl::cancel);
+
+            // Force disconnect
+            client.abort();  // Immediately terminates transport connections
+            boolean disconnected = client.waitFor(5000, BayeuxClient.State.DISCONNECTED);
+
+            if (!disconnected) {
+                LOG.warn("Bayeux Client did not disconnect within 5 seconds! Forcing shutdown...");
+            }
+
             client = null;
         }
         if (httpClient != null) {
             try {
-                httpClient.destroy();
+                LOG.info("Forcefully stopping HTTP client...");
+                httpClient.stop();   // Stop the HTTP client
+                httpClient.destroy(); // Destroy all resources
             } catch (Exception e) {
-                LOG.error("Unable to stop HTTP transport[{}]", parameters.endpoint(), e);
+                LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
             }
         }
-
     }
 
     /**
