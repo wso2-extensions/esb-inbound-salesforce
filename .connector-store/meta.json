@@ -31,6 +31,15 @@
         {
             "tagName": "v2.0.22",
             "products": [
+                "MI 4.4.0"
+            ],
+            "operations": [],
+            "connections": [],
+            "isHidden": false
+        },
+        {
+            "tagName": "v2.0.20",
+            "products": [
                 "MI 4.4.0",
                 "MI 4.3.0",
                 "MI 4.2.0",
