@@ -27,7 +27,6 @@ public class SalesforceConstant {
     public static final String SOAP_API_VERSION = "connection.salesforce.soapApiVersion";
     public static final String REPLAY_FROM = "connection.salesforce.replay";
     public static final String REPLAY_WITH_MULTIPLE_INBOUNDS = "connection.salesforce.replayWithMultipleInbounds";
-    public static final String INITIAL_EVENT_ID = "connection.salesforce.initialEventId";
     public static final String REPLAY_FROM_ID_Stored_File_Path = "connection.salesforce.EventIDStoredFilePath";
     public static final long REPLAY_FROM_EARLIEST = -2L;
     public static final long REPLAY_FROM_TIP = -1L;

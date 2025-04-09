@@ -238,6 +238,22 @@
               "helpTip": "Specify the file path of a text file to start replaying from the event ID stored in it.",
               "enableCondition": [{"connection.salesforce.replay":true}]
             }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.replayWithMultipleInbounds",
+              "displayName": "Support replaying messages with multiple inbound endpoints",
+              "inputType": "checkbox",
+              "defaultValue": false,
+              "required": "false",
+              "helpTip": "When enabled, supports replaying messages with multiple inbound endpoints.",
+              "enableCondition": [
+                {
+                  "connection.salesforce.replay": true
+                }
+              ]
+            }
           }
         ]
       }

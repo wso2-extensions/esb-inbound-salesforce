@@ -62,6 +62,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private EmpConnector connector;
     private AbstractRegistry registry;
     private boolean isReplayEnabled = false;
+    private boolean isReplayWithMultipleInboundsEnabled = false;
 
     // Flag indicating whether the connection has failed
     private boolean connectionFailed;
@@ -132,18 +133,27 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     }
 
     /**
-     * Store event ID to replay in the config registry .
-     * @param id          Event ID
+     * Store event id to replay in the config registry DB.
+     * @param id eventID
      */
     private void updateRegistryEventID(long id) {
         if (registry != null) {
-            Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
+            String registryPath;
+            String resourcePath;
+            if (isReplayWithMultipleInboundsEnabled) {
+                registryPath = SalesforceConstant.REGISTRY_PATH + "/" + this.name;
+                resourcePath = registryPath + "/" + SalesforceConstant.SALESFORCE_EVENT;
+            } else {
+                registryPath = SalesforceConstant.REGISTRY_PATH;
+                  resourcePath = SalesforceConstant.RESOURCE_PATH;
+            }
+            Object registryResource = registry.getResource(new Entry(resourcePath), null);
 
             if (registryResource == null) {
-                LOG.info("Registry resource not found. Creating new resource: " + SalesforceConstant.RESOURCE_PATH);
-                registry.newResource(SalesforceConstant.REGISTRY_PATH, true);
+                LOG.info("Registry resource not found. Creating new resource: " + resourcePath);
+                registry.newResource(registryPath, true);
             }
-            registry.newNonEmptyResource(SalesforceConstant.RESOURCE_PATH, false, "text/plain", "" + id,
+            registry.newNonEmptyResource(resourcePath, false, "text/plain", "" + id,
                         SalesforceDataHolderObject.salesforceObject);
         }
     }
@@ -154,10 +164,16 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      */
     private long getRegistryEventID() {
         long eventIDFromDB;
+        String resourcePath;
         registry = (AbstractRegistry) synapseEnvironment.getSynapseConfiguration().getRegistry();
-        Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
+        if (isReplayWithMultipleInboundsEnabled) {
+            resourcePath = SalesforceConstant.REGISTRY_PATH + "/" + this.name + "/" + SalesforceConstant.SALESFORCE_EVENT;
+        } else {
+            resourcePath = SalesforceConstant.RESOURCE_PATH;
+        }
+        Object registryResource = registry.getResource(new Entry(resourcePath), null);
         if (registryResource != null) {
-            Properties resourceProperties = registry.getResourceProperties(SalesforceConstant.RESOURCE_PATH);
+            Properties resourceProperties = registry.getResourceProperties(resourcePath);
             if (resourceProperties == null) {
                 return SalesforceConstant.REPLAY_FROM_TIP;
             }
@@ -275,6 +291,11 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         //replay enable
         if (Boolean.parseBoolean(properties.getProperty(SalesforceConstant.REPLAY_FROM))) {
             isReplayEnabled = true;
+
+            // Support Replay With Multiple Inbound Endpoints
+            isReplayWithMultipleInboundsEnabled = Boolean.parseBoolean(properties.getProperty(
+                    SalesforceConstant.REPLAY_WITH_MULTIPLE_INBOUNDS));
+
             if (properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path) != null && !StringUtils.
                     isEmpty(properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path))) {
                 try {
