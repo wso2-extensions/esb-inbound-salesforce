@@ -26,10 +26,14 @@ public class SalesforceConstant {
     public static final String PACKAGE_VERSION = "connection.salesforce.packageVersion";
     public static final String SOAP_API_VERSION = "connection.salesforce.soapApiVersion";
     public static final String REPLAY_FROM = "connection.salesforce.replay";
+    public static final String REPLAY_WITH_MULTIPLE_INBOUNDS = "connection.salesforce.replayWithMultipleInbounds";
     public static final String REPLAY_FROM_ID_Stored_File_Path = "connection.salesforce.EventIDStoredFilePath";
+    public static final String INITIAL_EVENT_ID = "connection.salesforce.initialEventId";
     public static final long REPLAY_FROM_EARLIEST = -2L;
     public static final long REPLAY_FROM_TIP = -1L;
     public static final String RESOURCE_PATH = "connector/salesforce/event";
+    public static final String REGISTRY_PATH = "connector/salesforce";
+    public static final String SALESFORCE_EVENT = "event";
     public static final String PROPERTY_NAME = "eventID";
     //object for the salesforce inbound endpoint
     public static final String SOBJECT = "connection.salesforce.salesforceObject";

@@ -61,6 +61,9 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private SalesforceDataHolderObject SalesforceDataHolderObject=new SalesforceDataHolderObject();
     private EmpConnector connector;
     private AbstractRegistry registry;
+    private boolean isReplayEnabled = false;
+    private boolean isReplayWithMultipleInboundsEnabled = false;
+    private boolean isInitialEventIdUsed = false;
 
     // Flag indicating whether the connection has failed
     private boolean connectionFailed;
@@ -71,6 +74,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         super(salesforceProperties, name, synapseEnvironment, scanInterval, injectingSeq, onErrorSeq, coordination,
                 sequential);
         SalesforceDataHolderObject.setProperties(salesforceProperties);
+        this.registry = (AbstractRegistry) synapseEnvironment.getSynapseConfiguration().getRegistry();
         loadMandatoryParameters(salesforceProperties);
         loadOptionalParameters(salesforceProperties);
         streamingEndpointUri = loginEndpoint;
@@ -135,15 +139,23 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      */
     private void updateRegistryEventID(long id) {
         if (registry != null) {
-            Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
-            if (registryResource != null) {
-                registry.newNonEmptyResource(SalesforceConstant.RESOURCE_PATH, false, "text/plain", "" + id,
-                        SalesforceDataHolderObject.salesforceObject);
-
+            String registryPath;
+            String resourcePath;
+            if (isReplayWithMultipleInboundsEnabled) {
+                registryPath = SalesforceConstant.REGISTRY_PATH + "/" + this.name;
+                resourcePath = registryPath + "/" + SalesforceConstant.SALESFORCE_EVENT;
             } else {
-                LOG.warn("Resource " + SalesforceDataHolderObject.salesforceObject +
-                        " not exists.Please create resource");
+                registryPath = SalesforceConstant.REGISTRY_PATH;
+                resourcePath = SalesforceConstant.RESOURCE_PATH;
             }
+            Object registryResource = registry.getResource(new Entry(resourcePath), null);
+
+            if (registryResource == null) {
+                LOG.info("Registry resource not found. Creating new resource: " + resourcePath);
+                registry.newResource(registryPath, true);
+            }
+            registry.newNonEmptyResource(resourcePath, false, "text/plain", "" + id,
+                        SalesforceDataHolderObject.salesforceObject);
         }
     }
 
@@ -153,10 +165,16 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      */
     private long getRegistryEventID() {
         long eventIDFromDB;
+        String resourcePath;
         registry = (AbstractRegistry) synapseEnvironment.getSynapseConfiguration().getRegistry();
-        Object registryResource = registry.getResource(new Entry(SalesforceConstant.RESOURCE_PATH), null);
+        if (isReplayWithMultipleInboundsEnabled) {
+            resourcePath = SalesforceConstant.REGISTRY_PATH + "/" + this.name + "/" + SalesforceConstant.SALESFORCE_EVENT;
+        } else {
+            resourcePath = SalesforceConstant.RESOURCE_PATH;
+        }
+        Object registryResource = registry.getResource(new Entry(resourcePath), null);
         if (registryResource != null) {
-            Properties resourceProperties = registry.getResourceProperties(SalesforceConstant.RESOURCE_PATH);
+            Properties resourceProperties = registry.getResourceProperties(resourcePath);
             if (resourceProperties == null) {
                 return SalesforceConstant.REPLAY_FROM_TIP;
             }
@@ -175,7 +193,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     }
     
     /**
-     * Connecting to Salesforce and listning to events
+     * Connecting to Salesforce and listening to events
      * @throws Throwable
      */
     private void makeConnect() throws Throwable {
@@ -202,6 +220,12 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         }
         connector.start().get(waitTime, TimeUnit.MILLISECONDS);
         TopicSubscription subscription;
+
+        //Read replayId
+        if (isReplayEnabled && !isInitialEventIdUsed) {
+            replayFromOption = getRegistryEventID();
+        }
+
         try {
             subscription = connector.subscribe(salesforceObject, replayFromOption, consumer)
                     .get(waitTime, TimeUnit.MILLISECONDS);
@@ -211,7 +235,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         } catch (TimeoutException e) {
             LOG.error("Timed out subscribing", e);
         } catch (InterruptedException e) {
-            LOG.error("Unexpected error occured while subscribing to event/topic", e);
+            LOG.error("Unexpected error occurred while subscribing to event/topic", e);
         }
     }
 
@@ -267,6 +291,11 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         SalesforceDataHolderObject.setWaitTime(waitTime);
         //replay enable
         if (Boolean.parseBoolean(properties.getProperty(SalesforceConstant.REPLAY_FROM))) {
+            isReplayEnabled = true;
+
+            // Support Replay With Multiple Inbound Endpoints
+            isReplayWithMultipleInboundsEnabled = Boolean.parseBoolean(properties.getProperty(
+                    SalesforceConstant.REPLAY_WITH_MULTIPLE_INBOUNDS));
 
             if (properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path) != null && !StringUtils.
                     isEmpty(properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path))) {
@@ -274,8 +303,26 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                     //read id from file
                     replayFromOption = readFromGivenFile(
                             properties.getProperty(SalesforceConstant.REPLAY_FROM_ID_Stored_File_Path));
+                    // Write replayFromOption to registry
+                    updateRegistryEventID(replayFromOption);
                 } catch (NumberFormatException e) {
                     LOG.error("The Value should be number", e);
+                }
+            } else if (properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID) != null && StringUtils.
+                    isNotEmpty(properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID))) {
+                try {
+                    // If the initial eventId given in configuration is higher than the replayId in registry,
+                    // initialEventId is used as the starting id for replaying
+                    long initialEventId = Long.parseLong(properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID));
+                    long registryValue = getRegistryEventID();
+                    if (initialEventId > registryValue) {
+                        replayFromOption = initialEventId;
+                        isInitialEventIdUsed = true;
+                    } else {
+                        replayFromOption = registryValue;
+                    }
+                } catch (NumberFormatException e) {
+                    LOG.error("Initial event ID should be number", e);
                 }
             } else {
                 //read id from  registry db
@@ -324,7 +371,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private void injectSalesforceMessage(String message, long id) {
         if (injectingSeq != null) {
             if (LOG.isDebugEnabled()) {
-                LOG.info("id for the event recieved: " + id);
+                LOG.info("id for the event received: " + id);
             }
             updateRegistryEventID(id);
             injectMessage(message, SalesforceConstant.CONTENT_TYPE);
@@ -359,6 +406,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     @Override
     public void resume() {
         isPolled = false;
+        isInitialEventIdUsed = false;
     }
 }
 
