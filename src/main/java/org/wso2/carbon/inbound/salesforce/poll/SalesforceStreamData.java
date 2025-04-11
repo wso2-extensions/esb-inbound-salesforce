@@ -63,6 +63,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private AbstractRegistry registry;
     private boolean isReplayEnabled = false;
     private boolean isReplayWithMultipleInboundsEnabled = false;
+    private boolean isInitialEventIdUsed = false;
 
     // Flag indicating whether the connection has failed
     private boolean connectionFailed;
@@ -145,7 +146,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                 resourcePath = registryPath + "/" + SalesforceConstant.SALESFORCE_EVENT;
             } else {
                 registryPath = SalesforceConstant.REGISTRY_PATH;
-                  resourcePath = SalesforceConstant.RESOURCE_PATH;
+                resourcePath = SalesforceConstant.RESOURCE_PATH;
             }
             Object registryResource = registry.getResource(new Entry(resourcePath), null);
 
@@ -221,7 +222,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         TopicSubscription subscription;
 
         //Read replayId
-        if (isReplayEnabled) {
+        if (isReplayEnabled && !isInitialEventIdUsed) {
             replayFromOption = getRegistryEventID();
         }
 
@@ -307,6 +308,22 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                 } catch (NumberFormatException e) {
                     LOG.error("The Value should be number", e);
                 }
+            } else if (properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID) != null && StringUtils.
+                    isNotEmpty(properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID))) {
+                try {
+                    // If the initial eventId given in configuration is higher than the replayId in registry,
+                    // initialEventId is used as the starting id for replaying
+                    long initialEventId = Long.parseLong(properties.getProperty(SalesforceConstant.INITIAL_EVENT_ID));
+                    long registryValue = getRegistryEventID();
+                    if (initialEventId > registryValue) {
+                        replayFromOption = initialEventId;
+                        isInitialEventIdUsed = true;
+                    } else {
+                        replayFromOption = registryValue;
+                    }
+                } catch (NumberFormatException e) {
+                    LOG.error("Initial event ID should be number", e);
+                }
             } else {
                 //read id from  registry db
                 replayFromOption = getRegistryEventID();
@@ -389,6 +406,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     @Override
     public void resume() {
         isPolled = false;
+        isInitialEventIdUsed = false;
     }
 }
 

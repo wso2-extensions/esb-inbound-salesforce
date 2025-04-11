@@ -220,6 +220,17 @@
           {
             "type": "attribute",
             "value": {
+              "name": "connection.salesforce.initialEventId",
+              "displayName": "InitialEventId",
+              "inputType": "string",
+              "defaultValue": "-1",
+              "required": "false",
+              "helpTip": "Initial event ID to start reading messages."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
               "name": "connection.salesforce.replay",
               "displayName": "Replay",
               "inputType": "checkbox",
