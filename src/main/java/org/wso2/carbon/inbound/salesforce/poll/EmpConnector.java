@@ -155,9 +155,6 @@ public class EmpConnector {
         if (client != null) {
             LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
 
-            // Unsubscribe from all active subscriptions
-            subscriptions.forEach(SubscriptionImpl::cancel);
-
             // Force disconnect
             client.abort();  // Immediately terminates transport connections
             boolean disconnected = client.waitFor(5000, BayeuxClient.State.DISCONNECTED);
@@ -171,7 +168,6 @@ public class EmpConnector {
         if (httpClient != null) {
             try {
                 LOG.info("Forcefully stopping HTTP client...");
-                httpClient.stop();   // Stop the HTTP client
                 httpClient.destroy(); // Destroy all resources
             } catch (Exception e) {
                 LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
