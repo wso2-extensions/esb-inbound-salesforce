@@ -77,6 +77,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         streamingEndpointUri = loginEndpoint;
         this.injectingSeq = injectingSeq;
         this.connectionFailed = false;
+        this.isCoordinationEnabled = coordination;
     }
 
     /**
