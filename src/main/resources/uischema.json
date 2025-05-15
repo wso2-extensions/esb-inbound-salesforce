@@ -111,7 +111,7 @@
               "name": "coordination",
               "displayName": "Coordination",
               "inputType": "checkbox",
-              "defaultValue": true,
+              "defaultValue": false,
               "required": "false",
               "helpTip": "In a clustered setup, this will run the inbound only in a single worker node."
             }
