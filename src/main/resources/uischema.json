@@ -111,9 +111,9 @@
               "name": "coordination",
               "displayName": "Coordination",
               "inputType": "checkbox",
-              "defaultValue": true,
+              "defaultValue": false,
               "required": "false",
-              "helpTip": "In a clustered setup, this will run the inbound only in a single worker node."
+              "helpTip": "Only tick this if you are using clustered deployment. This will ensure that the inbound endpoint is only executed by one node in the cluster."
             }
           }
         ]
