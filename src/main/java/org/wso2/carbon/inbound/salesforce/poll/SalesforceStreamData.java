@@ -58,6 +58,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private int connectionTimeout;
     private int waitTime;
     private boolean isPolled = false;
+    private boolean isCoordinationEnabled = false;
     private SalesforceDataHolderObject SalesforceDataHolderObject=new SalesforceDataHolderObject();
     private EmpConnector connector;
     private AbstractRegistry registry;
@@ -80,6 +81,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         streamingEndpointUri = loginEndpoint;
         this.injectingSeq = injectingSeq;
         this.connectionFailed = false;
+        this.isCoordinationEnabled = coordination;
     }
 
     /**
@@ -407,6 +409,10 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     public void resume() {
         isPolled = false;
         isInitialEventIdUsed = false;
+    }
+
+    public boolean isCoordinationEnabled() {
+        return isCoordinationEnabled;
     }
 }
 

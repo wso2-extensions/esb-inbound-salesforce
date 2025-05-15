@@ -119,6 +119,7 @@ public class EmpConnector {
 
     // A reference to the ConnectionFailureListener to notify upon connection failure
     private ConnectionFailureListener failureListener;
+    private SalesforceStreamData salesforceStreamData;
 
     public EmpConnector(BayeuxParameters parameters, ConnectionFailureListener listener) {
         this.parameters = parameters;
@@ -126,6 +127,7 @@ public class EmpConnector {
         httpClient.getProxyConfiguration().getProxies().addAll(parameters.proxies());
         httpClient.setConnectTimeout(SalesforceDataHolderObject.connectionTimeout);
         failureListener = listener;
+        salesforceStreamData = (SalesforceStreamData) listener;
     }
 
     /**
@@ -152,12 +154,13 @@ public class EmpConnector {
         if (!running.compareAndSet(true, false)) {
             return;
         }
+        boolean coordinationEnabled = salesforceStreamData.isCoordinationEnabled();
         if (client != null) {
             LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
-
-            // Unsubscribe from all active subscriptions
-            subscriptions.forEach(SubscriptionImpl::cancel);
-
+            if (coordinationEnabled) {
+                // Unsubscribe from all active subscriptions
+                subscriptions.forEach(SubscriptionImpl::cancel);
+            }
             // Force disconnect
             client.abort();  // Immediately terminates transport connections
             boolean disconnected = client.waitFor(5000, BayeuxClient.State.DISCONNECTED);
@@ -171,7 +174,9 @@ public class EmpConnector {
         if (httpClient != null) {
             try {
                 LOG.info("Forcefully stopping HTTP client...");
-                httpClient.stop();   // Stop the HTTP client
+                if (coordinationEnabled) {
+                    httpClient.stop();   // Stop the HTTP client
+                }
                 httpClient.destroy(); // Destroy all resources
             } catch (Exception e) {
                 LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
