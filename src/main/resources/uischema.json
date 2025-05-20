@@ -111,9 +111,9 @@
               "name": "coordination",
               "displayName": "Coordination",
               "inputType": "checkbox",
-              "defaultValue": false,
+              "defaultValue": true,
               "required": "false",
-              "helpTip": "Only tick this if you are using clustered deployment. This will ensure that the inbound endpoint is only executed by one node in the cluster."
+              "helpTip": "This will ensure that the inbound endpoint is only executed by one node in the clustered environment."
             }
           }
         ]
