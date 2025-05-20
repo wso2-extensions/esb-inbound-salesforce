@@ -119,7 +119,6 @@ public class EmpConnector {
 
     // A reference to the ConnectionFailureListener to notify upon connection failure
     private ConnectionFailureListener failureListener;
-    private SalesforceStreamData salesforceStreamData;
 
     public EmpConnector(BayeuxParameters parameters, ConnectionFailureListener listener) {
         this.parameters = parameters;
@@ -127,7 +126,6 @@ public class EmpConnector {
         httpClient.getProxyConfiguration().getProxies().addAll(parameters.proxies());
         httpClient.setConnectTimeout(SalesforceDataHolderObject.connectionTimeout);
         failureListener = listener;
-        salesforceStreamData = (SalesforceStreamData) listener;
     }
 
     /**
@@ -148,17 +146,20 @@ public class EmpConnector {
     }
 
     /**
-     * Stop the connector
+     * Stop the connector.
+     *
+     * @param terminateCompletely indicates if this is a final shutdown (true) or a temporary stop (false).
      */
-    public void stop() {
+    public void stop(boolean terminateCompletely ) {
         if (!running.compareAndSet(true, false)) {
             return;
         }
-        boolean coordinationEnabled = salesforceStreamData.isCoordinationEnabled();
+
         if (client != null) {
             LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
-            if (coordinationEnabled) {
-                // Unsubscribe from all active subscriptions
+
+            // Unsubscribe from all active subscriptions
+            if (terminateCompletely) {
                 subscriptions.forEach(SubscriptionImpl::cancel);
             }
             // Force disconnect
@@ -171,18 +172,26 @@ public class EmpConnector {
 
             client = null;
         }
-        if (httpClient != null) {
-            try {
-                LOG.info("Forcefully stopping HTTP client...");
-                if (coordinationEnabled) {
-                    httpClient.stop();   // Stop the HTTP client
-                }
-                httpClient.destroy(); // Destroy all resources
-            } catch (Exception e) {
-                LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
+
+        try {
+            if (terminateCompletely && httpClient != null) {
+                httpClient.stop(); // Stop the HTTP client
+                LOG.info("HTTP client stopped successfully.");
             }
+            httpClient.destroy(); // Destroy all resources
+        } catch (Exception e) {
+            LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
         }
     }
+
+    /**
+     * Stop the connector.
+     * This method is used to stop the connector without terminating the HTTP client.
+    */
+    public void stop() {
+        stop(false);
+    }
+
 
     /**
      * Set a bearer token / session id provider function that takes a boolean as input and returns a valid token.
@@ -320,6 +329,7 @@ public class EmpConnector {
     private void reconnect() {
         stop();
         if (running.compareAndSet(false, true)) {
+            LOG.info("Reconnecting to the Bayeux Client...");
             connect();
         } else {
             LOG.error("The current value of running is not as we expect, this means our reconnection may not happen");
