@@ -17,6 +17,15 @@
     ],
     "releases": [
         {
+            "tagName": "v3.0.0",
+            "products": [
+                "MI 4.4.0"
+            ],
+            "operations": [],
+            "connections": [],
+            "isHidden": false
+        },
+        {
             "tagName": "v2.1.13",
             "products": [
                 "MI 4.4.0",
