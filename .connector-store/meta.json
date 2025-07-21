@@ -17,13 +17,167 @@
     ],
     "releases": [
         {
-            "tagName": "v3.0.0",
+            "tagName": "v3.0.2",
             "products": [
                 "MI 4.4.0"
             ],
-            "operations": [],
-            "connections": [],
-            "isHidden": false
+            "operations": [
+                {
+                    "name": "init",
+                    "description": "Initialize Kafka Inbound Endpoint",
+                    "params": [
+                        {
+                            "name": "name",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Unique identifier for the Salesforce event integration."
+                        },
+                        {
+                            "name": "class",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamData",
+                            "description": ""
+                        },
+                        {
+                            "name": "generateSequences",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "True",
+                            "description": ""
+                        },
+                        {
+                            "name": "sequence",
+                            "type": "keyOrExpression",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Sequence to inject the Salesforce message"
+                        },
+                        {
+                            "name": "onError",
+                            "type": "keyOrExpression",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Error sequence to invoke on fault"
+                        },
+                        {
+                            "name": "suspend",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "False",
+                            "description": "Suspend Inbound"
+                        },
+                        {
+                            "name": "interval",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "The polling interval for the Salesforce inbound endpoint."
+                        },
+                        {
+                            "name": "sequential",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "True",
+                            "description": "The behaviour when executing the given sequence."
+                        },
+                        {
+                            "name": "coordination",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "True",
+                            "description": "This will ensure that the inbound endpoint is only executed by one node in the clustered environment."
+                        },
+                        {
+                            "name": "connection.salesforce.salesforceObject",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Name of the Salesforce object to interact with."
+                        },
+                        {
+                            "name": "connection.salesforce.packageVersion",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Version of the Salesforce package."
+                        },
+                        {
+                            "name": "connection.salesforce.userName",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Salesforce login user name."
+                        },
+                        {
+                            "name": "connection.salesforce.password",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "",
+                            "description": "Salesforce login password."
+                        },
+                        {
+                            "name": "connection.salesforce.loginEndpoint",
+                            "type": "string",
+                            "required": true,
+                            "defaultValue": "https://login.salesforce.com",
+                            "description": "Salesforce login URL endpoint."
+                        },
+                        {
+                            "name": "connection.salesforce.soapApiVersion",
+                            "type": "string",
+                            "required": false,
+                            "defaultValue": "22.0",
+                            "description": "Version of the Salesforce SOAP API to use."
+                        },
+                        {
+                            "name": "connection.salesforce.connectionTimeout",
+                            "type": "string",
+                            "required": false,
+                            "defaultValue": "10000",
+                            "description": "Connection timeout in milliseconds."
+                        },
+                        {
+                            "name": "connection.salesforce.waitTime",
+                            "type": "string",
+                            "required": false,
+                            "defaultValue": "86400000",
+                            "description": "Wait time in milliseconds before making a new request in case of server delays."
+                        },
+                        {
+                            "name": "connection.salesforce.initialEventId",
+                            "type": "string",
+                            "required": false,
+                            "defaultValue": "-1",
+                            "description": "Initial event ID to start reading messages."
+                        },
+                        {
+                            "name": "connection.salesforce.replay",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "False",
+                            "description": "Enabling this will read the event ID stored in the Registry or from the text file provided via Event ID File Path parameter."
+                        },
+                        {
+                            "name": "connection.salesforce.EventIDStoredFilePath",
+                            "type": "string",
+                            "required": false,
+                            "defaultValue": "",
+                            "description": "Specify the file path of a text file to start replaying from the event ID stored in it."
+                        },
+                        {
+                            "name": "connection.salesforce.replayWithMultipleInbounds",
+                            "type": "checkbox",
+                            "required": false,
+                            "defaultValue": "False",
+                            "description": "When enabled, supports replaying messages with multiple inbound endpoints."
+                        }
+                    ],
+                    "isHidden": false
+                }
+            ],
+            "connections": []
         },
         {
             "tagName": "v2.1.13",
