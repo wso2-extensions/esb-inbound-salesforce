@@ -20,7 +20,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.integration.inbound</groupId>
     <artifactId>mi-inbound-salesforce</artifactId>
-    <version>3.0.3-SNAPSHOT</version>
+    <version>3.0.3</version>
     <name>Salesforce Polling Consumer</name>
     <url>http://wso2.org</url>
     <parent>
@@ -138,7 +138,7 @@ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
         <connection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</connection>
         <url>https://github.com/wso2-extensions/esb-inbound-salesforce.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/esb-inbound-salesforce.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v3.0.3</tag>
     </scm>
     <repositories>
         <repository>
