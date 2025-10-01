@@ -19,7 +19,8 @@
         {
             "tagName": "v3.0.3",
             "products": [
-                "MI 4.4.0"
+                "MI 4.4.0",
+                "MI 4.5.0"
             ],
             "operations": [
                 {
@@ -185,7 +186,8 @@
                 "MI 4.4.0",
                 "MI 4.3.0",
                 "MI 4.2.0",
-                "MI 4.1.0"
+                "MI 4.1.0",
+                "MI 4.5.0"
             ],
             "operations": [],
             "connections": [],
@@ -197,7 +199,8 @@
                 "MI 4.4.0",
                 "MI 4.3.0",
                 "MI 4.2.0",
-                "MI 4.1.0"
+                "MI 4.1.0",
+                "MI 4.5.0"
             ],
             "operations": [],
             "connections": [],
@@ -209,7 +212,8 @@
                 "MI 4.4.0",
                 "MI 4.3.0",
                 "MI 4.2.0",
-                "MI 4.1.0"
+                "MI 4.1.0",
+                "MI 4.5.0"
             ],
             "operations": [],
             "connections": [],
@@ -223,7 +227,8 @@
                 "MI 4.2.0",
                 "MI 4.1.0",
                 "MI 4.0.0",
-                "MI 1.2.0"
+                "MI 1.2.0",
+                "MI 4.5.0"
             ],
             "operations": [],
             "connections": [],
@@ -237,7 +242,8 @@
                 "MI 4.2.0",
                 "MI 4.1.0",
                 "MI 4.0.0",
-                "MI 1.2.0"
+                "MI 1.2.0",
+                "MI 4.5.0"
             ],
             "operations": [],
             "connections": [],
