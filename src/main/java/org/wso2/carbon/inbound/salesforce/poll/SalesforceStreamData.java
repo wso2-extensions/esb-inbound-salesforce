@@ -404,10 +404,18 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         }
     }
 
-    @Override
+    /**
+     * Resume the polling.
+     */
     public void resume() {
         isPolled = false;
         isInitialEventIdUsed = false;
     }
-}
 
+    /**
+     * Pause the polling.
+     */
+    public void pause() {
+        destroy();
+    }
+}
