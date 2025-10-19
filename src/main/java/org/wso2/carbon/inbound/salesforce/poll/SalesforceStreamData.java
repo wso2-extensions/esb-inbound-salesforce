@@ -408,6 +408,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      * Resume the polling.
      */
     public void resume() {
+        LOG.info("Resume operation called for inbound consumer: " + this.name);
         isPolled = false;
         isInitialEventIdUsed = false;
     }
@@ -416,6 +417,6 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      * Pause the polling.
      */
     public void pause() {
-        destroy();
+        LOG.info("Pause operation called for inbound consumer: " + this.name);
     }
 }
