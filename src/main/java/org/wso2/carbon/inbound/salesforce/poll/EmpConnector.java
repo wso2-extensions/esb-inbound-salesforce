@@ -96,11 +96,26 @@ public class EmpConnector {
                     if (error == null) {
                         error = message.get(FAILURE);
                     }
-                    future.completeExceptionally(new CannotSubscribe(parameters.endpoint(), topic, replayFrom,
-                            error != null ? error : message));
+                    String errorText = String.valueOf(error != null ? error : message);
+                    if (isInvalidReplayError(errorText))  {
+                        cancel();
+                        future.completeExceptionally(
+                                new InvalidReplayIdException(topic, replayFrom, errorText));
+                    } else {
+                        future.completeExceptionally(new CannotSubscribe(parameters.endpoint(), topic, replayFrom,
+                                error != null ? error : message));
+                    }
                 }
             });
             return future;
+        }
+
+        private boolean isInvalidReplayError(String errorText) {
+            if (errorText == null) {
+                return false;
+            }
+            String lower = errorText.toLowerCase();
+            return lower.contains("replayid") && lower.contains("invalid");
         }
     }
 
