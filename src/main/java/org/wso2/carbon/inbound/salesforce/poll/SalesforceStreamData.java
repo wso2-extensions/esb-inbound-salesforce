@@ -67,6 +67,7 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
 
     // Flag indicating whether the connection has failed
     private boolean connectionFailed;
+    private long fallbackReplayId = Long.MIN_VALUE;
 
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
@@ -232,7 +233,26 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                     .get(waitTime, TimeUnit.MILLISECONDS);
             LOG.info("Subscribed: " + subscription);
         } catch (ExecutionException e) {
-            LOG.error("Unable to subscribed for the event/topic", e);
+            Throwable cause = e.getCause();
+            // If the failure is due to an invalid replay ID and a fallback replay ID is configured,
+            // attempt to subscribe using the fallback replay ID
+            if (fallbackReplayId != Long.MIN_VALUE && cause instanceof InvalidReplayIdException) {
+                LOG.warn("Replay ID " + ((InvalidReplayIdException) cause).getReplayFrom() + " is invalid for topic " + salesforceObject
+                        + ". Retrying with fallback replay value: " + fallbackReplayId);
+                try {
+                    subscription = connector.subscribe(salesforceObject, fallbackReplayId, consumer)
+                            .get(waitTime, TimeUnit.MILLISECONDS);
+                    LOG.info("Subscribed with fallback replay: " + subscription);
+                } catch (ExecutionException retryEx) {
+                    LOG.error("Unable to subscribe after replay fallback", retryEx);
+                } catch (TimeoutException retryEx) {
+                    LOG.error("Timed out subscribing after replay fallback", retryEx);
+                } catch (InterruptedException retryEx) {
+                    LOG.error("Interrupted while subscribing after replay fallback", retryEx);
+                }
+            } else {
+                LOG.error("Unable to subscribed for the event/topic", e);
+            }
         } catch (TimeoutException e) {
             LOG.error("Timed out subscribing", e);
         } catch (InterruptedException e) {
@@ -328,6 +348,14 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
             } else {
                 //read id from  registry db
                 replayFromOption = getRegistryEventID();
+            }
+            if (properties.getProperty(SalesforceConstant.FALLBACK_REPLAY_ID) != null
+                    && StringUtils.isNotEmpty(properties.getProperty(SalesforceConstant.FALLBACK_REPLAY_ID))) {
+                try {
+                    fallbackReplayId = Long.parseLong(properties.getProperty(SalesforceConstant.FALLBACK_REPLAY_ID));
+                } catch (NumberFormatException e) {
+                    LOG.error("Fallback replay ID should be number", e);
+                }
             }
         } else {
             replayFromOption = SalesforceConstant.REPLAY_FROM_TIP;

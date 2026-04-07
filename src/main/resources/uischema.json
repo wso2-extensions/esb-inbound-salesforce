@@ -253,6 +253,17 @@
           {
             "type": "attribute",
             "value": {
+              "name": "connection.salesforce.fallbackReplayId",
+              "displayName": "Fallback Replay ID",
+              "inputType": "string",
+              "required": "false",
+              "helpTip": "Fallback event ID to start reading messages if the event ID stored in the Registry is invalid. -2 to replay all events, or -1 to replay only new events.",
+              "enableCondition": [{"connection.salesforce.replay": true}]
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
               "name": "connection.salesforce.replayWithMultipleInbounds",
               "displayName": "Support replaying messages with multiple inbound endpoints",
               "inputType": "checkbox",
