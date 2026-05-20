@@ -69,6 +69,12 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private boolean connectionFailed;
     private long fallbackReplayId = Long.MIN_VALUE;
 
+    // OAuth2 Client Credentials parameters
+    private String grantType = "password";
+    private String clientId;
+    private String clientSecret;
+    private String tokenEndpoint;
+
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
                                 boolean sequential) {
@@ -202,13 +208,44 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                 (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
         BearerTokenProvider tokenProvider;
-        tokenProvider = new BearerTokenProvider(() -> {
-            try {
-                return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+
+        if ("client_credentials".equals(grantType)) {
+            // OAuth2 Client Credentials flow
+            tokenProvider = new BearerTokenProvider(() -> {
+                try {
+                    URL tokenUrl = new URL(tokenEndpoint);
+                    BayeuxParameters initialParams = new BayeuxParameters() {
+                        @Override
+                        public String bearerToken() {
+                            return null;
+                        }
+
+                        @Override
+                        public URL endpoint() {
+                            return null;
+                        }
+
+                        @Override
+                        public String version() {
+                            return SalesforceDataHolderObject.packageVersion;
+                        }
+                    };
+                    return ClientCredentialsLoginHelper.login(clientId, clientSecret, tokenUrl, initialParams);
+                } catch (Exception e) {
+                    LOG.error("OAuth2 token exchange failed", e);
+                    throw new RuntimeException("Failed to obtain OAuth2 token: " + e.getMessage(), e);
+                }
+            });
+        } else {
+            // Username/Password (SOAP) authentication
+            tokenProvider = new BearerTokenProvider(() -> {
+                try {
+                    return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
         BayeuxParameters params = tokenProvider.login();
         connector = new EmpConnector(params, this);
         LoggingListener loggingListener = new LoggingListener(true, true);
@@ -290,6 +327,21 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         if (LOG.isDebugEnabled()) {
             LOG.debug("Starting to load the salesforce credentials");
         }
+        // Load OAuth2 parameters
+        String grantTypeParam = properties.getProperty(SalesforceConstant.GRANT_TYPE);
+        if (grantTypeParam != null && !StringUtils.isEmpty(grantTypeParam)) {
+            grantType = grantTypeParam;
+        }
+        if ("client_credentials".equals(grantType)) {
+            clientId = properties.getProperty(SalesforceConstant.CLIENT_ID);
+            clientSecret = properties.getProperty(SalesforceConstant.CLIENT_SECRET);
+            tokenEndpoint = properties.getProperty(SalesforceConstant.TOKEN_ENDPOINT);
+            if (StringUtils.isEmpty(tokenEndpoint)) {
+                tokenEndpoint = "https://login.salesforce.com/services/oauth2/token";
+            }
+            LOG.info("OAuth2 Client Credentials authentication enabled for Salesforce");
+        }
+
         if (properties.getProperty(SalesforceConstant.CONNECTION_TIMEOUT) == null) {
             connectionTimeout = SalesforceConstant.CONNECTION_TIMEOUT_DEFAULT;
         } else {
