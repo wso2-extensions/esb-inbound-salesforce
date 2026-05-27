@@ -30,6 +30,15 @@ public class SalesforceConstant {
     public static final String REPLAY_FROM_ID_Stored_File_Path = "connection.salesforce.EventIDStoredFilePath";
     public static final String INITIAL_EVENT_ID = "connection.salesforce.initialEventId";
     public static final String FALLBACK_REPLAY_ID = "connection.salesforce.fallbackReplayId";
+    // Authentication type selection
+    public static final String AUTH_TYPE = "connection.salesforce.authenticationType";
+    public static final String AUTH_TYPE_SOAP = "username-token";
+    public static final String AUTH_TYPE_OAUTH = "oauth";
+    // oauth2 Client Credentials parameters
+    public static final String CLIENT_ID = "connection.salesforce.clientId";
+    public static final String CLIENT_SECRET = "connection.salesforce.clientSecret";
+    public static final String TOKEN_ENDPOINT = "connection.salesforce.tokenEndpoint";
+    public static final String DEFAULT_TOKEN_ENDPOINT = "https://login.salesforce.com/services/oauth2/token";
     public static final long REPLAY_FROM_EARLIEST = -2L;
     public static final long REPLAY_FROM_TIP = -1L;
     public static final String RESOURCE_PATH = "connector/salesforce/event";

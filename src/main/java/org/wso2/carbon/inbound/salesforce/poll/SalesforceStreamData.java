@@ -69,6 +69,12 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     private boolean connectionFailed;
     private long fallbackReplayId = Long.MIN_VALUE;
 
+    // Authentication type and oauth2 parameters
+    private String authType = SalesforceConstant.AUTH_TYPE_SOAP;
+    private String clientId;
+    private String clientSecret;
+    private String tokenEndpoint;
+
     public SalesforceStreamData(Properties salesforceProperties, String name, SynapseEnvironment synapseEnvironment,
                                 long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
                                 boolean sequential) {
@@ -202,13 +208,40 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                 (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
         BearerTokenProvider tokenProvider;
-        tokenProvider = new BearerTokenProvider(() -> {
-            try {
-                return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+
+        if (SalesforceConstant.AUTH_TYPE_OAUTH.equals(authType)) {
+            // oauth2 Client Credentials flow — initialParams provides default SSL/proxy config;
+            // bearerToken() and endpoint() are supplied by ClientCredentialsLoginHelper after token exchange.
+            BayeuxParameters initialParams = new BayeuxParameters() {
+                @Override
+                public String bearerToken() {
+                    throw new IllegalStateException("Bearer token is not available before OAuth2 token exchange");
+                }
+
+                @Override
+                public URL endpoint() {
+                    throw new IllegalStateException("Endpoint is not available before OAuth2 token exchange");
+                }
+            };
+            tokenProvider = new BearerTokenProvider(() -> {
+                try {
+                    return ClientCredentialsLoginHelper.login(clientId, clientSecret, new URL(tokenEndpoint),
+                            initialParams);
+                } catch (Exception e) {
+                    LOG.error("oauth2 token exchange failed", e);
+                    throw new RuntimeException("Failed to obtain oauth2 token: " + e.getMessage(), e);
+                }
+            });
+        } else {
+            // Username/Password (SOAP) authentication
+            tokenProvider = new BearerTokenProvider(() -> {
+                try {
+                    return LoginHelper.login(new URL(streamingEndpointUri), userName, password);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
         BayeuxParameters params = tokenProvider.login();
         connector = new EmpConnector(params, this);
         LoggingListener loggingListener = new LoggingListener(true, true);
@@ -290,6 +323,34 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         if (LOG.isDebugEnabled()) {
             LOG.debug("Starting to load the salesforce credentials");
         }
+        // Load authentication type
+        String authTypeParam = properties.getProperty(SalesforceConstant.AUTH_TYPE);
+        if (authTypeParam != null && !StringUtils.isEmpty(authTypeParam)) {
+            authType = authTypeParam.trim().toLowerCase();
+            if (!SalesforceConstant.AUTH_TYPE_SOAP.equals(authType) && !SalesforceConstant.AUTH_TYPE_OAUTH.equals(authType)) {
+                handleException("Invalid authenticationType '" + authType + "'. Supported values: "
+                        + SalesforceConstant.AUTH_TYPE_SOAP + ", " + SalesforceConstant.AUTH_TYPE_OAUTH);
+            }
+        }
+        if (SalesforceConstant.AUTH_TYPE_OAUTH.equals(authType)) {
+            clientId = properties.getProperty(SalesforceConstant.CLIENT_ID);
+            clientSecret = properties.getProperty(SalesforceConstant.CLIENT_SECRET);
+            if (StringUtils.isEmpty(clientId) || StringUtils.isEmpty(clientSecret)) {
+                handleException("oauth authentication requires both clientId and clientSecret");
+            }
+            tokenEndpoint = properties.getProperty(SalesforceConstant.TOKEN_ENDPOINT);
+            if (StringUtils.isEmpty(tokenEndpoint)) {
+                tokenEndpoint = SalesforceConstant.DEFAULT_TOKEN_ENDPOINT;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("oauth authentication enabled for Salesforce");
+            }
+        } else {
+            if (StringUtils.isEmpty(userName) || StringUtils.isEmpty(password)) {
+                handleException("username-token authentication requires both userName and password");
+            }
+        }
+
         if (properties.getProperty(SalesforceConstant.CONNECTION_TIMEOUT) == null) {
             connectionTimeout = SalesforceConstant.CONNECTION_TIMEOUT_DEFAULT;
         } else {

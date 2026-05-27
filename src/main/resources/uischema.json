@@ -138,10 +138,22 @@
             "type": "attribute",
             "value": {
               "name": "connection.salesforce.packageVersion",
-              "displayName": "Package Version",
+              "displayName": "Salesforce API Version",
               "inputType": "string",
               "required": "true",
-              "helpTip": "Version of the Salesforce package."
+              "helpTip": "Salesforce Streaming API version (e.g. 37.0)."
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.authenticationType",
+              "displayName": "Authentication Type",
+              "inputType": "combo",
+              "comboValues": ["username-token", "oauth"],
+              "defaultValue": "username-token",
+              "required": "true",
+              "helpTip": "Select 'username-token' for SOAP login. Select 'oauth' to use OAuth2 Client Credentials (no user context required)."
             }
           },
           {
@@ -151,7 +163,8 @@
               "displayName": "User Name",
               "inputType": "string",
               "required": "true",
-              "helpTip": "Salesforce login user name."
+              "helpTip": "Salesforce login username.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "username-token"}]
             }
           },
           {
@@ -161,7 +174,8 @@
               "displayName": "Password",
               "inputType": "string",
               "required": "true",
-              "helpTip": "Salesforce login password."
+              "helpTip": "Salesforce login password concatenated with the security token (e.g. myPasswordXXXXXXXX).",
+              "enableCondition": [{"connection.salesforce.authenticationType": "username-token"}]
             }
           },
           {
@@ -172,7 +186,42 @@
               "inputType": "string",
               "defaultValue": "https://login.salesforce.com",
               "required": "true",
-              "helpTip": "Salesforce login URL endpoint."
+              "helpTip": "Salesforce SOAP login endpoint. Use https://test.salesforce.com for sandboxes.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "username-token"}]
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.clientId",
+              "displayName": "Client ID",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "OAuth2 consumer key from the Salesforce Connected App.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "oauth"}]
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.clientSecret",
+              "displayName": "Client Secret",
+              "inputType": "string",
+              "required": "true",
+              "helpTip": "OAuth2 consumer secret from the Salesforce Connected App.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "oauth"}]
+            }
+          },
+          {
+            "type": "attribute",
+            "value": {
+              "name": "connection.salesforce.tokenEndpoint",
+              "displayName": "Token Endpoint",
+              "inputType": "string",
+              "defaultValue": "https://login.salesforce.com/services/oauth2/token",
+              "required": "true",
+              "helpTip": "OAuth2 token endpoint. Use https://test.salesforce.com/services/oauth2/token for sandboxes.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "oauth"}]
             }
           }
         ]
@@ -192,7 +241,8 @@
               "inputType": "string",
               "defaultValue": "22.0",
               "required": "false",
-              "helpTip": "Version of the Salesforce SOAP API to use."
+              "helpTip": "Version of the Salesforce SOAP API to use.",
+              "enableCondition": [{"connection.salesforce.authenticationType": "username-token"}]
             }
           },
           {

@@ -19,6 +19,7 @@ package org.wso2.carbon.inbound.salesforce.poll;
 
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.IObjectFactory;
@@ -29,6 +30,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import org.cometd.bayeux.Message;
 import org.cometd.bayeux.client.ClientSessionChannel;
 
+@PowerMockIgnore({"javax.net.ssl.*", "jdk.internal.*"})
 @RunWith(PowerMockRunner.class)
 public class LogginListnerTest extends PowerMockTestCase {
     private LoggingListener loggingListener;
