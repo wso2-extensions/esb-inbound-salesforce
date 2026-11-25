@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.cometd.bayeux.Channel;
 import org.cometd.bayeux.Message;
+import org.cometd.bayeux.client.ClientSession;
 import org.cometd.bayeux.client.ClientSessionChannel;
 import org.cometd.client.BayeuxClient;
 import org.cometd.client.transport.LongPollingTransport;
@@ -41,10 +42,18 @@ public class EmpConnector {
 
         private final String topic;
         private final Consumer<Map<String, Object>> consumer;
+        // A single listener instance per subscription, so that it can be added to a client's channel at most once.
+        private final ClientSessionChannel.MessageListener listener;
+        // The client this subscription was last subscribed on, and the result of that subscribe. Guarded by this.
+        private BayeuxClient subscribedOn;
+        private CompletableFuture<TopicSubscription> subscribeResult;
+        // Completed by the first subscribe reply on any client. Returned when no client is available to subscribe on.
+        private final CompletableFuture<TopicSubscription> firstResult = new CompletableFuture<>();
 
         private SubscriptionImpl(String topic, Consumer<Map<String, Object>> consumer) {
             this.topic = topic;
             this.consumer = consumer;
+            this.listener = (c, message) -> consumer.accept(message.getDataAsMap());
             subscriptions.add(this);
         }
 
@@ -84,30 +93,53 @@ public class EmpConnector {
             return String.format("Subscription [%s:%s]", getTopic(), getReplayFrom());
         }
 
-        Future<TopicSubscription> subscribe() {
-            Long replayFrom = getReplayFrom();
-            ClientSessionChannel channel = client.getChannel(topic);
-            CompletableFuture<TopicSubscription> future = new CompletableFuture<>();
-            channel.subscribe((c, message) -> consumer.accept(message.getDataAsMap()), (c, message) -> {
-                if (message.isSuccessful()) {
-                    future.complete(this);
-                } else {
-                    Object error = message.get(ERROR);
-                    if (error == null) {
-                        error = message.get(FAILURE);
-                    }
-                    String errorText = String.valueOf(error != null ? error : message);
-                    if (isInvalidReplayError(errorText))  {
-                        cancel();
-                        future.completeExceptionally(
-                                new InvalidReplayIdException(topic, replayFrom, errorText));
-                    } else {
-                        future.completeExceptionally(new CannotSubscribe(parameters.endpoint(), topic, replayFrom,
-                                error != null ? error : message));
-                    }
+        /**
+         * Subscribe this topic on the given Bayeux client.
+         *
+         * The target client is passed explicitly instead of reading the {@code client} field, so that a handshake
+         * callback of one client can never register a listener on a different client.
+         *
+         * This is idempotent per client: if this subscription is already subscribed on the target, the existing result
+         * is returned. CometD would otherwise add the same listener again and deliver every event twice. This happens
+         * when both the handshake callback and {@link EmpConnector#subscribe} subscribe the same topic on a client.
+         * A re-handshake resets the client's subscriptions, so this subscribes again after one.
+         *
+         * @param target the Bayeux client to subscribe on
+         */
+        Future<TopicSubscription> subscribe(BayeuxClient target) {
+            ClientSessionChannel channel = target.getChannel(topic);
+            synchronized (this) {
+                if (subscribedOn == target && channel.getSubscribers().contains(listener)) {
+                    return subscribeResult;
                 }
-            });
-            return future;
+                Long replayFrom = getReplayFrom();
+                CompletableFuture<TopicSubscription> future = new CompletableFuture<>();
+                subscribedOn = target;
+                subscribeResult = future;
+                channel.subscribe(listener, (c, message) -> {
+                    if (message.isSuccessful()) {
+                        future.complete(this);
+                        firstResult.complete(this);
+                    } else {
+                        Object error = message.get(ERROR);
+                        if (error == null) {
+                            error = message.get(FAILURE);
+                        }
+                        String errorText = String.valueOf(error != null ? error : message);
+                        Throwable failure;
+                        if (isInvalidReplayError(errorText))  {
+                            cancel();
+                            failure = new InvalidReplayIdException(topic, replayFrom, errorText);
+                        } else {
+                            failure = new CannotSubscribe(parameters.endpoint(), topic, replayFrom,
+                                    error != null ? error : message);
+                        }
+                        future.completeExceptionally(failure);
+                        firstResult.completeExceptionally(failure);
+                    }
+                });
+                return future;
+            }
         }
 
         private boolean isInvalidReplayError(String errorText) {
@@ -122,11 +154,18 @@ public class EmpConnector {
     private static long REPLAY_FROM_EARLIEST = -2L;
     private static long REPLAY_FROM_TIP = -1L;
     private static String AUTHORIZATION = "Authorization";
+    // The current Bayeux client. Written only under lifecycleLock; whoever removes a client from here aborts it.
     private volatile BayeuxClient client;
     private final HttpClient httpClient;
     private final BayeuxParameters parameters;
     private final ConcurrentMap<String, Long> replay = new ConcurrentHashMap<>();
     private final AtomicBoolean running = new AtomicBoolean();
+    // Set by a final stop. Once set, no new Bayeux client may be published or handshaken by this connector.
+    // Written only under lifecycleLock.
+    private volatile boolean terminated;
+    // Guards publishing and clearing the client, setting terminated, starting the HTTP client and starting a handshake.
+    // Held only briefly: never while logging in, aborting or waiting for a client, or stopping the HTTP client.
+    private final Object lifecycleLock = new Object();
     private final Set<SubscriptionImpl> subscriptions = new CopyOnWriteArraySet<>();
     private final Set<MessageListenerInfo> listenerInfos = new CopyOnWriteArraySet<>();
     private Function<Boolean, String> bearerTokenProvider;
@@ -166,11 +205,30 @@ public class EmpConnector {
      * @param terminateCompletely indicates if this is a final shutdown (true) or a temporary stop (false).
      */
     public void stop(boolean terminateCompletely ) {
-        if (!running.compareAndSet(true, false)) {
+        BayeuxClient current;
+        synchronized (lifecycleLock) {
+            // A concurrent connect() checks terminated under this lock before starting the HTTP client, and again
+            // before publishing its client and starting the handshake. So it either sees the flag and starts neither,
+            // or has already published its client, which is taken here and aborted below.
+            if (terminateCompletely) {
+                terminated = true;
+            }
+            current = client;
+            client = null;
+        }
+        boolean wasRunning = running.getAndSet(false);
+
+        if (current == null && !wasRunning && !terminateCompletely) {
+            // Already stopped and nothing to clean up.
             return;
         }
 
-        if (client != null) {
+        if (current != null) {
+            if (!wasRunning) {
+                // The running flag must never hide a live client; otherwise it is left connected as an orphan.
+                LOG.warn("EmpConnector was not marked as running, but a Bayeux Client is still active. "
+                        + "Shutting it down.");
+            }
             LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
 
             // Unsubscribe from all active subscriptions
@@ -178,22 +236,23 @@ public class EmpConnector {
                 subscriptions.forEach(SubscriptionImpl::cancel);
             }
             // Force disconnect
-            client.abort();  // Immediately terminates transport connections
-            boolean disconnected = client.waitFor(5000, BayeuxClient.State.DISCONNECTED);
+            current.abort();  // Immediately terminates transport connections
+            boolean disconnected = current.waitFor(5000, BayeuxClient.State.DISCONNECTED);
 
             if (!disconnected) {
                 LOG.warn("Bayeux Client did not disconnect within 5 seconds! Forcing shutdown...");
             }
-
-            client = null;
         }
 
         try {
-            if (terminateCompletely && httpClient != null) {
-                httpClient.stop(); // Stop the HTTP client
+            // Only a final stop releases the HTTP client. A temporary stop (reconnect) keeps it for the next connect().
+            // It must be stopped before it is destroyed: destroy() drops the client's components, so a later stop()
+            // could no longer stop their threads.
+            if (terminateCompletely) {
+                httpClient.stop();
+                httpClient.destroy();
                 LOG.info("HTTP client stopped successfully.");
             }
-            httpClient.destroy(); // Destroy all resources
         } catch (Exception e) {
             LOG.error("Error while shutting down HTTP transport[{}]", parameters.endpoint(), e);
         }
@@ -237,7 +296,12 @@ public class EmpConnector {
                     String.format("Already subscribed to %s [%s]", topic, parameters.endpoint()));
         }
         SubscriptionImpl subscription = new SubscriptionImpl(topic, consumer);
-        return subscription.subscribe();
+        BayeuxClient current = client;
+        if (current == null) {
+            // A reconnect is in progress. The subscription is registered, so the next successful handshake subscribes it.
+            return subscription.firstResult;
+        }
+        return subscription.subscribe(current);
     }
 
     /**
@@ -286,15 +350,24 @@ public class EmpConnector {
     }
 
     private Future<Boolean> connect() {
-        LOG.info("Connector connecting");
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        try {
-            httpClient.start();
-        } catch (Exception e) {
-            LOG.error("Unable to start HTTP transport[{}]", parameters.endpoint(), e);
-            running.set(false);
-            future.complete(false);
-            return future;
+        // The check and the start are atomic with respect to a final stop (see stop()): the HTTP client is either
+        // started before the final stop stops it, or not started at all.
+        synchronized (lifecycleLock) {
+            if (terminated) {
+                running.set(false);
+                future.complete(false);
+                return future;
+            }
+            LOG.info("Connector connecting");
+            try {
+                httpClient.start();
+            } catch (Exception e) {
+                LOG.error("Unable to start HTTP transport[{}]", parameters.endpoint(), e);
+                running.set(false);
+                future.complete(false);
+                return future;
+            }
         }
         String bearerToken = bearerToken();
         LongPollingTransport httpTransport = new LongPollingTransport(parameters.longPollingOptions(), httpClient) {
@@ -304,23 +377,64 @@ public class EmpConnector {
                 request.header(AUTHORIZATION, bearerToken);
             }
         };
-        client = new BayeuxClient(parameters.endpoint().toExternalForm(), httpTransport);
-        client.addExtension(new ReplayExtension(replay));
-        addListeners(client);
-        client.handshake((c, m) -> {
+        final BayeuxClient newClient = new BayeuxClient(parameters.endpoint().toExternalForm(), httpTransport);
+        newClient.addExtension(new ReplayExtension(replay));
+        addListeners(newClient);
+        // Note: CometD invokes this callback for every handshake reply of this client, including its own automatic
+        // handshake retries and re-handshakes, not only for the first handshake.
+        ClientSessionChannel.MessageListener onHandshake = (c, m) -> {
+            if (terminated || newClient != client) {
+                // This client has been replaced (or the connector was stopped). It must not subscribe anything,
+                // otherwise a duplicate listener is registered and events are processed more than once.
+                if (newClient.isDisconnected()) {
+                    // Expected: stop() aborted this client while its handshake was in flight (TERMINATING/
+                    // DISCONNECTED), e.g. during a reconnect or redeploy.
+                    LOG.info("Discarding handshake reply of a Bayeux Client that was already shut down.");
+                } else {
+                    // Unexpected: an old client is still alive and handshaking while it is no longer the active one.
+                    LOG.warn("Received a handshake reply from a stale Bayeux Client that is still active. "
+                            + "Aborting the stale client.");
+                }
+                newClient.abort();
+                future.complete(false);
+                return;
+            }
             if (!m.isSuccessful()) {
                 Object error = m.get(ERROR);
                 if (error == null) {
                     error = m.get(FAILURE);
                 }
+                // Do not mark the connector as stopped here: CometD keeps retrying the handshake on this client, so
+                // the client is still active and must remain reachable by stop()/reconnect().
                 future.completeExceptionally(
                         new ConnectException(String.format("Cannot connect [%s] : %s", parameters.endpoint(), error)));
-                running.set(false);
             } else {
-                subscriptions.forEach(SubscriptionImpl::subscribe);
+                subscriptions.forEach(subscription -> subscription.subscribe(newClient));
                 future.complete(true);
             }
-        });
+        };
+        // The terminated check, publishing the client and starting the handshake are atomic with respect to stop():
+        // either stop() runs first and this client is never published, or the handshake has started before stop()
+        // takes and aborts the client. abort() does nothing on a client that has not started its handshake, so stop()
+        // must not see the client in between.
+        BayeuxClient replaced;
+        synchronized (lifecycleLock) {
+            if (terminated) {
+                // A final stop ran while this connect() was in progress (for example during the re-login in
+                // bearerToken()). Never publish or start a client for a stopped connector.
+                running.set(false);
+                future.complete(false);
+                return future;
+            }
+            replaced = client;
+            client = newClient;
+            newClient.handshake(onHandshake);
+        }
+        if (replaced != null) {
+            // Not expected: every path clears the client before connecting. Never leave a replaced client running.
+            LOG.warn("Replacing a Bayeux Client that is still active. Shutting it down.");
+            replaced.abort();
+        }
         return future;
     }
 
@@ -341,14 +455,30 @@ public class EmpConnector {
         return bearerToken;
     }
 
-    private void reconnect() {
-        stop();
-        if (running.compareAndSet(false, true)) {
-            LOG.info("Reconnecting to the Bayeux Client...");
-            connect();
-        } else {
-            LOG.error("The current value of running is not as we expect, this means our reconnection may not happen");
+    /**
+     * Replace the given client with a new one, if it is still the current client.
+     *
+     * @param failed the client that reported the authentication failure
+     */
+    private void reconnect(ClientSession failed) {
+        BayeuxClient current;
+        synchronized (lifecycleLock) {
+            if (terminated || client != failed) {
+                // The connector was stopped, or the failing client was already replaced (for example by a concurrent
+                // reconnect). Reconnecting now would tear down a healthy client or start one for a stopped connector.
+                return;
+            }
+            current = client;
+            client = null;
         }
+        reauthenticate.set(true);
+        LOG.info("Forcefully shutting down Bayeux Client in EmpConnector");
+        current.abort();
+        if (!current.waitFor(5000, BayeuxClient.State.DISCONNECTED)) {
+            LOG.warn("Bayeux Client did not disconnect within 5 seconds! Forcing shutdown...");
+        }
+        LOG.info("Reconnecting to the Bayeux Client...");
+        connect();
     }
 
     /**
@@ -363,11 +493,16 @@ public class EmpConnector {
         @Override
         public void onMessage(ClientSessionChannel channel, Message message) {
 
+            ClientSession session = channel.getSession();
+            if (session != client) {
+                // Ignore failures reported by a client that has already been replaced or stopped; reconnecting on
+                // its behalf would tear down the healthy current client.
+                return;
+            }
             if (!message.isSuccessful()) {
                 if (isError(message, ERROR_401) || isError(message, ERROR_403)) {
-                    reauthenticate.set(true);
                     try {
-                        reconnect();
+                        reconnect(session);
                     } catch (Exception e) {
                         LOG.warn("Failed to reconnect ", e);
                         if (failureListener != null) {

@@ -23,6 +23,8 @@
             <class name="org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamDataTest"/>
             <class name="org.wso2.carbon.inbound.salesforce.poll.LogginListnerTest"/>
             <class name="org.wso2.carbon.inbound.salesforce.poll.BearerTokenProviderTest"/>
+            <class name="org.wso2.carbon.inbound.salesforce.poll.EmpConnectorTest"/>
+            <class name="org.wso2.carbon.inbound.salesforce.poll.SalesforceStreamDataReconnectTest"/>
         </classes>
     </test>
 </suite>

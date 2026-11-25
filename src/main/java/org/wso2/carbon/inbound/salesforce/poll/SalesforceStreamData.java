@@ -57,16 +57,19 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     // optional parameters.
     private int connectionTimeout;
     private int waitTime;
-    private boolean isPolled = false;
+    private volatile boolean isPolled = false;
     private SalesforceDataHolderObject SalesforceDataHolderObject=new SalesforceDataHolderObject();
-    private EmpConnector connector;
+    private volatile EmpConnector connector;
+    // Set by destroy(), which MI also calls when the polling task is paused (for example when this node loses
+    // coordination), and cleared by resume(). A connection that is being set up meanwhile must not stay running.
+    private volatile boolean stopRequested;
     private AbstractRegistry registry;
     private boolean isReplayEnabled = false;
     private boolean isReplayWithMultipleInboundsEnabled = false;
     private boolean isInitialEventIdUsed = false;
 
     // Flag indicating whether the connection has failed
-    private boolean connectionFailed;
+    private volatile boolean connectionFailed;
     private long fallbackReplayId = Long.MIN_VALUE;
 
     // Authentication type and oauth2 parameters
@@ -201,9 +204,14 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
     
     /**
      * Connecting to Salesforce and listening to events
+     * @return false if the connection was abandoned because destroy() was called meanwhile, true otherwise
      * @throws Throwable
      */
-    private void makeConnect() throws Throwable {
+    private boolean makeConnect() throws Throwable {
+        if (stopRequested) {
+            // Paused or undeployed and not resumed yet: do not log in to Salesforce. resume() clears the flag.
+            return false;
+        }
         Consumer<Map<String, Object>> consumer = event -> injectSalesforceMessage(JSON.toString(event),
                 (Long) ((HashMap) event.
                         get(SalesforceConstant.EVENT)).get(SalesforceConstant.REPLAY_ID));
@@ -243,17 +251,30 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
             });
         }
         BayeuxParameters params = tokenProvider.login();
+        if (connector != null) {
+            // Shut down the previous connector (and its Bayeux client) before replacing it, so that it cannot keep
+            // receiving and injecting events alongside the new one.
+            LOG.info("Reinitializing the connector");
+            connector.stop(true);
+        }
         connector = new EmpConnector(params, this);
         LoggingListener loggingListener = new LoggingListener(true, true);
         connector.addListener(Channel.META_HANDSHAKE, loggingListener).addListener(Channel.META_CONNECT, loggingListener)
                 .addListener(Channel.META_DISCONNECT, loggingListener).addListener(Channel.META_SUBSCRIBE, loggingListener)
                 .addListener(Channel.META_UNSUBSCRIBE, loggingListener);
         connector.setBearerTokenProvider(tokenProvider);
-        if (connector.isConnected()) {
-            LOG.info("Reinitializing the connector");
-            connector.stop();
+        if (stopRequested) {
+            // destroy() ran while this connection was being set up and may not have seen the new connector. The
+            // connector field is written before this flag is read, and destroy() writes the flag before reading the
+            // field, so at least one of them stops it.
+            connector.stop(true);
+            return false;
         }
         connector.start().get(waitTime, TimeUnit.MILLISECONDS);
+        if (stopRequested) {
+            // destroy() stopped the new connector while it was starting.
+            return false;
+        }
         TopicSubscription subscription;
 
         //Read replayId
@@ -277,19 +298,33 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
                             .get(waitTime, TimeUnit.MILLISECONDS);
                     LOG.info("Subscribed with fallback replay: " + subscription);
                 } catch (ExecutionException retryEx) {
-                    LOG.error("Unable to subscribe after replay fallback", retryEx);
+                    logConnectionSetupError("Unable to subscribe after replay fallback", retryEx);
                 } catch (TimeoutException retryEx) {
-                    LOG.error("Timed out subscribing after replay fallback", retryEx);
+                    logConnectionSetupError("Timed out subscribing after replay fallback", retryEx);
                 } catch (InterruptedException retryEx) {
-                    LOG.error("Interrupted while subscribing after replay fallback", retryEx);
+                    logConnectionSetupError("Interrupted while subscribing after replay fallback", retryEx);
                 }
             } else {
-                LOG.error("Unable to subscribed for the event/topic", e);
+                logConnectionSetupError("Unable to subscribed for the event/topic", e);
             }
         } catch (TimeoutException e) {
-            LOG.error("Timed out subscribing", e);
+            logConnectionSetupError("Timed out subscribing", e);
         } catch (InterruptedException e) {
-            LOG.error("Unexpected error occurred while subscribing to event/topic", e);
+            logConnectionSetupError("Unexpected error occurred while subscribing to event/topic", e);
+        }
+        // Not connected if destroy() stopped the connector while it was subscribing.
+        return !stopRequested;
+    }
+
+    /**
+     * Log a failure while setting up the Salesforce connection. A failure caused by destroy() stopping the connection
+     * meanwhile (for example when the polling task is paused) is expected, so it is not logged as an error.
+     */
+    private void logConnectionSetupError(String message, Throwable e) {
+        if (stopRequested) {
+            LOG.info("Salesforce connection setup abandoned because the inbound endpoint was stopped: " + message);
+        } else {
+            LOG.error(message, e);
         }
     }
 
@@ -443,12 +478,13 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
         //Establishing connection with Salesforce streaming api.
         try {
             if (!isPolled || connectionFailed) {
-                makeConnect();
-                isPolled = true;
-                connectionFailed = false;
+                if (makeConnect()) {
+                    isPolled = true;
+                    connectionFailed = false;
+                }
             }
         } catch (Throwable e) {
-            LOG.error("Error while setup the Salesforce connection.", e);
+            logConnectionSetupError("Error while setup the Salesforce connection.", e);
         }
         return null;
     }
@@ -488,13 +524,18 @@ public class SalesforceStreamData extends GenericPollingConsumer implements Conn
      */
     @Override
     public void destroy() {
-        if (connector != null) {
-            connector.stop(true);
+        // MI also calls this when the polling task is paused (for example when this node loses coordination), and
+        // resume() afterwards. Set the flag before reading the connector; see makeConnect().
+        stopRequested = true;
+        EmpConnector current = connector;
+        if (current != null) {
+            current.stop(true);
         }
     }
 
     @Override
     public void resume() {
+        stopRequested = false;
         isPolled = false;
         isInitialEventIdUsed = false;
     }
